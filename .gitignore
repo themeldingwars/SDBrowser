@@ -1,0 +1,9 @@
+FauFau.Core/[Bb]in/
+FauFau.Core/[Oo]bj/
+packages/
+.vs/
+*.suo
+*.user
+*.sln.docstates
+*.sdf
+*.opensdf
