@@ -1,5 +1,7 @@
-FauFau.Core/[Bb]in/
-FauFau.Core/[Oo]bj/
+FauFau/[Bb]in/
+FauFau/[Oo]bj/
+FauFau.Test/[Bb]in/
+FauFau.Test/[Oo]bj/
 packages/
 .vs/
 *.suo
