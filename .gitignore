@@ -2,6 +2,8 @@ FauFau/[Bb]in/
 FauFau/[Oo]bj/
 FauFau.Test/[Bb]in/
 FauFau.Test/[Oo]bj/
+FauFau.SDBrowser/[Bb]in/
+FauFau.SDBrowser/[Oo]bj/
 packages/
 .vs/
 *.suo

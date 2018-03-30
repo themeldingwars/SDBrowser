@@ -9,17 +9,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using FauFau.Util;
 
+using FauFau.CommmonDataTypes;
+using static FauFau.Util.BinaryUtil;
+
 namespace FauFau
 {
     public class StaticDB : Util.BinaryWrapper, IEnumerable<StaticDB.Table>
     {
+
         public string Patch;
-        public ulong Timestamp;
+        public DateTime Timestamp;
         public uint Flags;
         public List<Table> Tables;
 
         private uint fileVersion = 12;
         private uint tableVersion = 1002;
+        private int numThreads = Environment.ProcessorCount;
 
         private static Dictionary<uint, int> tableIdLookup = new Dictionary<uint, int>();
         private static Dictionary<uint, Dictionary<uint, int>> fieldIdLookup = new Dictionary<uint, Dictionary<uint, int>>();
@@ -34,21 +39,24 @@ namespace FauFau
             sw.Start();
 
             // read header
-            HeaderInfo headerInfo = Read<HeaderInfo>(bs);
+            HeaderInfo headerInfo = bs.Read.Type<HeaderInfo>();
 
             this.Patch = headerInfo.patchName;
-            this.Timestamp = headerInfo.timestamp;
+            this.Timestamp = new DateTime();
+            this.Timestamp = Util.Time.DateTimeFromUnixTimestampMicroseconds((long)headerInfo.timestamp);
             this.Flags = headerInfo.flags;
+            this.fileVersion = headerInfo.version;
 
-            BinaryStream xbs = new BinaryStream(new MemoryStream((int)headerInfo.payloadSize));
-
-            Console.WriteLine("read: "+sw.ElapsedMilliseconds);
+            //Console.WriteLine("read: "+sw.ElapsedMilliseconds);
+            sw.Restart();
 
             // deobfuscate
-            BinaryUtil.MTXor(Checksum.FFnv32(headerInfo.patchName), bs, xbs);
-            xbs.ByteOffset = 0;
 
-            Console.WriteLine("dxor: " + sw.ElapsedMilliseconds);
+            byte[] data = bs.Read.ByteArray((int)headerInfo.payloadSize);
+            MTXor(Checksum.FFnv32(headerInfo.patchName), ref data);
+
+            //Console.WriteLine("dxor: " + sw.ElapsedMilliseconds);
+            sw.Restart();
 
             // cleanup memory, the original stream is not needed anymore
             bs.Dispose();
@@ -56,32 +64,34 @@ namespace FauFau
             GC.Collect();
 
             // read compression header
-            uint inflatedSize = xbs.Read.UInt();
-            xbs.Read.UInt(); // 4 byte padding
-            xbs.Read.UShort(); // 0x78 01 zlib deflate low/no compression  
+            // uint inflated size
+            // uint padding
+            // ushort 0x78 0x01 zlib deflate low/no compression  
 
-            BinaryStream ibs = new BinaryStream(new MemoryStream((int)inflatedSize));
+            uint inflatedSize = UIntFromBufferLE(ref data);
+            ushort ds = UShortFromBufferLE(ref data, 8);
 
-            // inflate the compressed database
-            BinaryUtil.Inflate(xbs, ibs, (int)inflatedSize);
-            ibs.ByteOffset = 0;
+            byte[] inflated = new byte[inflatedSize];
+            Inflate(data, ref inflated, (int)inflatedSize, 10);        
+            BinaryStream ibs = new BinaryStream(new MemoryStream((inflated)));
+            data = null;
+            
 
-            Console.WriteLine("infl: " + sw.ElapsedMilliseconds);
+            //Console.WriteLine("infl: " + sw.ElapsedMilliseconds);
+            sw.Restart();
 
             // cleanup memory, the deobfuscated stream is not needed anymore
-            xbs.Dispose();
-            xbs = null;
             GC.Collect();
 
             // read table header
-            uint version = ibs.Read.UInt();
+            this.tableVersion = ibs.Read.UInt();
             ushort indexLength = ibs.Read.UShort();
 
             // read table info
             TableInfo[] tableInfos = new TableInfo[indexLength];
             for (ushort i = 0; i < indexLength; i++)
             {
-                tableInfos[i] = Read<TableInfo>(ibs);
+                tableInfos[i] = ibs.Read.Type<TableInfo>();
             }
 
             // read field info
@@ -91,7 +101,7 @@ namespace FauFau
                 fieldInfos[i] = new FieldInfo[tableInfos[i].numFields];
                 for (int x = 0; x < tableInfos[i].numFields; x++)
                 {
-                    fieldInfos[i][x] = Read<FieldInfo>(ibs);
+                    fieldInfos[i][x] = ibs.Read.Type<FieldInfo>();
                 }
             }
 
@@ -99,7 +109,7 @@ namespace FauFau
             RowInfo[] rowInfos = new RowInfo[indexLength];
             for (ushort i = 0; i < indexLength; i++)
             {
-                rowInfos[i] = Read<RowInfo>(ibs);
+                rowInfos[i] = ibs.Read.Type<RowInfo>();
             }
 
 
@@ -117,11 +127,23 @@ namespace FauFau
 
                 // add fields
                 table.Columns = new List<Column>(tableInfo.numFields);
+                int currentWidth = 0;
                 for (int x = 0; x < tableInfo.numFields; x++)
                 {
                     Column field = new Column();
                     field.Id = fieldInfos[i][x].id;
                     field.Type = (DBType)fieldInfos[i][x].type;
+
+                    // fix removed fields? (weird padding some places)
+                    if (fieldInfo[x].start != currentWidth)
+                    {
+                        int padding = fieldInfo[x].start - currentWidth;
+                        field.Padding = padding;
+                        currentWidth += padding;
+                    }
+                    currentWidth += DBTypeLength((DBType)fieldInfo[x].type);
+
+
                     table.Columns.Add(field);
                 }
 
@@ -155,78 +177,84 @@ namespace FauFau
                 Tables.Add(table);
             }
 
-            Console.WriteLine("tabl: " + sw.ElapsedMilliseconds);
+            //Console.WriteLine("tabl: " + sw.ElapsedMilliseconds);
+            sw.Restart();
+
 
             // read rows
+            ConcurrentQueue<int> tableRowsReadQueue = new ConcurrentQueue<int>();
             for (ushort i = 0; i < indexLength; i++)
             {
-                TableInfo tableInfo = tableInfos[i];
-                FieldInfo[] fieldInfo = fieldInfos[i];
-                RowInfo rowInfo = rowInfos[i];
-
-                Tables[i].Rows = new List<Row>();
-
-                for (int y = 0; y < rowInfo.rowCount; y++)
-                {
-                    Row row = new Row(tableInfo.numFields);
-                    ibs.ByteOffset = rowInfo.rowOffset + (tableInfo.numBytes * y) + fieldInfo[0].start;
-                    for (int z = 0; z < tableInfo.numFields; z++)
-                    {
-                        // just read the basic type now, unpack & decrypt later to reduce seeking
-
-                        var v = ReadDBType(ibs, (DBType)fieldInfo[z].type);
-                        row.Fields.Add(v);
-                    }
-
-                    // null out nulls again :P
-                    int qq = 0;
-                    if (tableInfo.nullableBitfields > qq)
-                    {
-                        byte[] nulls = ibs.Read.BitArray(tableInfo.nullableBitfields * 8);
-
-                        for(int n = 0; n < Tables[i].NullableColumn.Count; n++)
-                        {
-                            if(nulls[n] == 1)
-                            {
-                                int index = Tables[i].Columns.IndexOf(Tables[i].NullableColumn[n]);
-                                row[index] = null;
-                                qq++;
-                            }
-                        }
-                    }
-
-                    Tables[i].Rows.Add(row);
-                }
+                tableRowsReadQueue.Enqueue(i);
             }
 
+            Parallel.For(0, numThreads, new ParallelOptions { MaxDegreeOfParallelism = numThreads }, q => {
 
-            Console.WriteLine("rows: " + sw.ElapsedMilliseconds);
+                BinaryStream dbs = new BinaryStream(new MemoryStream(inflated));
+
+                while (tableRowsReadQueue.Count != 0)
+                {
+                    int i;
+                    if (!tableRowsReadQueue.TryDequeue(out i)) continue;
+
+                    TableInfo tableInfo = tableInfos[i];
+                    FieldInfo[] fieldInfo = fieldInfos[i];
+                    RowInfo rowInfo = rowInfos[i];
+
+                    Tables[i].Rows = new List<Row>();
+
+                    for (int y = 0; y < rowInfo.rowCount; y++)
+                    {
+                        Row row = new Row(tableInfo.numFields);
+                        dbs.ByteOffset = rowInfo.rowOffset + (tableInfo.numBytes * y) + fieldInfo[0].start;
+                        for (int z = 0; z < tableInfo.numFields; z++)
+                        {
+                            if(Tables[i].Columns[z].Padding != 0)
+                            {
+                                dbs.ByteOffset += Tables[i].Columns[z].Padding;
+                            }
+                            // just read the basic type now, unpack & decrypt later to reduce seeking
+                            row.Fields.Add(ReadDBType(dbs, (DBType)fieldInfo[z].type));
+                        }
+
+                        // null out nulls again :P
+                        if (tableInfo.nullableBitfields > 0)
+                        {
+                            byte[] nulls = dbs.Read.BitArray(tableInfo.nullableBitfields * 8);
+                            for (int n = 0; n < Tables[i].NullableColumn.Count; n++)
+                            {
+                                if (nulls[n] == 1)
+                                {
+                                    int index = Tables[i].Columns.IndexOf(Tables[i].NullableColumn[n]);
+                                    row[index] = null;
+                                }
+                            }
+                        }
+                        Tables[i].Rows.Add(row);
+                    }
+                }
+            });
+
+            inflated = null;
+            //Console.WriteLine("rows: " + sw.ElapsedMilliseconds);
+            sw.Restart();
 
             // seek to the very end of the tables/start of data
             RowInfo lri = rowInfos[rowInfos.Length - 1];
             TableInfo lti = tableInfos[tableInfos.Length - 1];
             ibs.ByteOffset = lri.rowOffset + (lri.rowCount * lti.numBytes);
 
-
-           
-
             // copy the data to a new stream 
             int dataLength = (int)(ibs.Length - ibs.ByteOffset);
 
             byte[] dataBlock = ibs.Read.ByteArray(dataLength);
-
-
 
             // cleanup
             ibs.Dispose();
             ibs = null;
             GC.Collect();
 
-
-            // unpack & decrypt data entries
-
-
-            int numThreads = Environment.ProcessorCount;
+            // get unique data entry keys
             HashSet<uint> uniqueKeys = new HashSet<uint>();
             ConcurrentQueue<uint> uniqueQueue = new ConcurrentQueue<uint>();
             Dictionary<uint, byte[]> uniqueEntries = new Dictionary<uint, byte[]>();
@@ -236,43 +264,33 @@ namespace FauFau
                 for (int x = 0; x < Tables[i].Columns.Count; x++)
                 {
                     DBType type = Tables[i].Columns[x].Type;
-                    switch (type)
-                    {
-                        case DBType.String:
-                        case DBType.Blob:
-                        case DBType.ByteArray:
-                        case DBType.UShortArray:
-                        case DBType.UIntArray:
-                        case DBType.Vector2Array:
-                        case DBType.Vector3Array:
-                        case DBType.Vector4Array:
-                            for (int y = 0; y < Tables[i].Rows.Count; y++)
-                            {
 
-                                uint? k = (uint?)Tables[i].Rows[y][x];
-                                object obj = null;
-                                if (k != null)
+                    if (IsDataType(type))
+                    {
+                        for (int y = 0; y < Tables[i].Rows.Count; y++)
+                        {
+                            uint? k = (uint?)Tables[i].Rows[y][x];
+                            if (k != null)
+                            {
+                                if (!uniqueKeys.Contains((uint)k))
                                 {
-                                    if(!uniqueKeys.Contains((uint)k))
-                                    {
-                                        uniqueKeys.Add((uint)k);
-                                        uniqueQueue.Enqueue((uint)k);
-                                    }
+                                    uniqueKeys.Add((uint)k);
+                                    uniqueQueue.Enqueue((uint)k);
                                 }
                             }
-                            break;
+                        }
+
                     }
                 }
             }
 
+            //Console.WriteLine("uniq: " + sw.ElapsedMilliseconds);
+            sw.Restart();
 
-            Console.WriteLine("uniq: " + sw.ElapsedMilliseconds);
-
+            // unpack & decrypt unique data entries to cache
             Parallel.For(0, numThreads, new ParallelOptions { MaxDegreeOfParallelism = numThreads }, i => {
 
-                BinaryStream dbs = new BinaryStream();
-                dbs.Write.ByteArray(dataBlock);
-                dbs.ByteOffset = 0;
+                BinaryStream dbs = new BinaryStream(new MemoryStream(dataBlock));
 
                 while (uniqueQueue.Count != 0)
                 {
@@ -284,108 +302,53 @@ namespace FauFau
                     {
                         uniqueEntries.Add(key, d);
                     }
-                    
                 }
-
+                dbs.Dispose();
             });
+            dataBlock = null;
 
-            Console.WriteLine("upac: " + sw.ElapsedMilliseconds);
+            //Console.WriteLine("upac: " + sw.ElapsedMilliseconds);
+            sw.Restart();
 
+            // copy data entires to the tables from cache
             for (int z = 0; z < Tables.Count; z++)
             {
                 for (int x = 0; x < Tables[z].Columns.Count; x++)
                 {
                     DBType type = Tables[z].Columns[x].Type;
-                    switch (type)
+                    if (IsDataType(type))
                     {
-                        case DBType.String:
-                        case DBType.Blob:
-                        case DBType.ByteArray:
-                        case DBType.UShortArray:
-                        case DBType.UIntArray:
-                        case DBType.Vector2Array:
-                        case DBType.Vector3Array:
-                        case DBType.Vector4Array:
-                            for (int y = 0; y < Tables[z].Rows.Count; y++)
+                        Parallel.For(0, Tables[z].Rows.Count, y =>
+                        {
+                            uint? k = (uint?)Tables[z].Rows[y][x];
+                            object obj = null;
+                            if (k != null)
                             {
-                                uint? k = (uint?)Tables[z].Rows[y][x];
-                                object obj = null;
-                                if (k != null)
+                                if (uniqueEntries.ContainsKey((uint)k))
                                 {
-                                    if (uniqueEntries.ContainsKey((uint)k))
+                                    byte[] d = uniqueEntries[(uint)k];
+                                    if (d != null)
                                     {
-                                        byte[] d = uniqueEntries[(uint)k];
-                                        if (d != null)
-                                        {
-                                            obj = BytesToDBType(type, d);
-                                        }
+                                        obj = BytesToDBType(type, d);
                                     }
-
                                 }
 
-
-                                    Tables[z].Rows[y][x] = obj;
-                                
                             }
-                            break;
+                            Tables[z].Rows[y][x] = obj;
+                        });
                     }
+
                 }
             }
 
 
-            /*
-            int tn = 0;
-            Parallel.For(0, numThreads, new ParallelOptions { MaxDegreeOfParallelism = numThreads }, i =>
-            {
-                Interlocked.Increment(ref tn);
-                int z = tn - 1;
-                for (int x = 0; x < Tables[z].Fields.Count; x++)
-                {
-                    DBType type = Tables[z].Fields[x].type;
-                    switch (type)
-                    {
-                        case DBType.String:
-                        case DBType.Blob:
-                        case DBType.ByteArray:
-                        case DBType.UShortArray:
-                        case DBType.UIntArray:
-                        case DBType.Vector2Array:
-                        case DBType.Vector3Array:
-                        case DBType.Vector4Array:
-                            for (int y = 0; y < Tables[z].Rows.Count; y++)
-                            {
-                                uint? k = (uint?)Tables[z].Rows[y][x];
-                                object obj = null;
-                                if (k != null)
-                                {
-                                    if (uniqueEntries.ContainsKey((uint)k))
-                                    {
-                                        byte[] d = uniqueEntries[(uint)k];
-                                        if (d != null)
-                                        {
-                                            obj = BytesToDBType(type, d);
-                                        }
-                                    }
-
-                                }
-
-                                lock(Tables)
-                                {
-                                    Tables[z].Rows[y][x] = obj;
-                                }                               
-                            }
-                            break;
-                    }
-                }
-            });
-            */
-
+            //Console.WriteLine("assi: " + sw.ElapsedMilliseconds);
+            sw.Restart();
 
             // cleanup :>
-
-            GC.Collect();
-
-            // cleanup :>
+            uniqueKeys = null;
+            uniqueQueue = null;
+            uniqueEntries = null;
             headerInfo = null;
             tableInfos = null;
             fieldInfos = null;
@@ -474,17 +437,17 @@ namespace FauFau
                 case DBType.String:
                     return bs.Read.UInt();
                 case DBType.Vector2:
-                    return Read<Vector2>(bs);
+                    return bs.Read.Type<Vector2>();
                 case DBType.Vector3:
-                    return Read<Vector3>(bs);
+                    return bs.Read.Type<Vector3>();
                 case DBType.Vector4:
-                    return Read<Vector4>(bs);
+                    return bs.Read.Type<Vector4>();
                 case DBType.Matrix4x4:
-                    return Read<Matrix4x4>(bs);
+                    return bs.Read.Type<Matrix4x4>();
                 case DBType.Blob:
                     return bs.Read.UInt();;
                 case DBType.Box3:
-                    return Read<Box3>(bs);
+                    return bs.Read.Type<Box3>();
                 case DBType.Vector2Array:
                     return bs.Read.UInt();
                 case DBType.Vector3Array:
@@ -500,7 +463,7 @@ namespace FauFau
                 case DBType.UIntArray:
                     return bs.Read.UInt();
                 case DBType.HalfMatrix4x3:
-                    return Read<HalfMatrix4x3>(bs);
+                    return bs.Read.Type<HalfMatrix4x3>();
                 case DBType.Half:
                     return bs.Read.Half(); // reads half as float
                 default:
@@ -550,25 +513,25 @@ namespace FauFau
                     bs.Write.Double((double)obj);
                     break;
                 case DBType.Vector2:
-                    Write((Vector2)obj, bs);
+                    bs.Write.Type((Vector2)obj);
                     break;
                 case DBType.Vector3:
-                    Write((Vector3)obj, bs);
+                    bs.Write.Type((Vector3)obj);
                     break;
                 case DBType.Vector4:
-                    Write((Vector4)obj, bs);
+                    bs.Write.Type((Vector4)obj);
                     break;
                 case DBType.Matrix4x4:
-                    Write((Matrix4x4)obj, bs);
+                    bs.Write.Type((Matrix4x4)obj);
                     break;
                 case DBType.Box3:
-                    Write((Box3)obj, bs);
+                    bs.Write.Type((Box3)obj);
                     break;
                 case DBType.AsciiChar:
                     bs.Write.Char((char)obj, BinaryStream.TextEncoding.ASCII);
                     break;
                 case DBType.HalfMatrix4x3:
-                    Write((HalfMatrix4x3)obj, bs);
+                    bs.Write.Type((HalfMatrix4x3)obj);
                     break;
                 case DBType.Half:
                      bs.Write.Half((float) obj); // write float as half
@@ -586,39 +549,9 @@ namespace FauFau
             }
 
         }
-        public static T Read<T>(BinaryStream bs) where T : ReadWrite, new()
-        {
-            T ret = new T();
-            ret.Read(bs);
-            return ret;
-        }
-        public static List<T> ReadList<T>(BinaryStream bs, int count) where T : ReadWrite, new()
-        {
-            List<T> ret = new List<T>(count);
-            for (int i = 0; i < count; i++)
-            {
-                T entry = new T();
-                entry.Read(bs);
-                ret.Add(entry);
-            }
-            return ret;
-        }
-        public static void Write<T>(T obj, BinaryStream bs) where T : ReadWrite
-        {
-            obj.Write(bs);
-        }
-        public static void WriteList<T>(List<T> obj, BinaryStream bs) where T : ReadWrite
-        {
-            foreach (T o in obj)
-            {
-                o.Write(bs);
-            }
-        }
         public byte[] GetDataEntry(BinaryStream bs, uint key)
         {
             byte[] ret = null;
-            BinaryStream xdbs;
-            MemoryStream ms;
 
             uint address = key >> 1;
             uint length;
@@ -639,28 +572,33 @@ namespace FauFau
             if (length > 0)
             {
                 MersenneTwister mt = new MersenneTwister(key);
-                xdbs = new BinaryStream();
-                uint z = (uint)length >> 2;
-                uint w = (uint)length & 3;
+                uint x = length >> 2;
+                uint y = length & 3;
 
-                for (uint q = 0; q < z; q++)
-                {
-                    xdbs.Write.UInt(bs.Read.UInt() ^ mt.Next());
-                }
-                for (uint q = 0; q < w; q++)
-                {
-                    xdbs.Write.Byte((byte)(bs.Read.Byte() ^ (byte)mt.Next()));
-                }
+                byte[] data = bs.Read.ByteArray((int)length);
+                byte[] xor = new byte[length];
 
-                xdbs.ByteOffset = 0;
-                ret = xdbs.Read.ByteArray((int)length);
+                for (int i = 0; i < x; i++)
+                {
+                    WriteToBufferLE(ref xor, mt.Next(), i * 4);
+                }
+                int z = (int)x * 4;
+                for (uint i = 0; i < y; i++)
+                {
+                    xor[z + i] = (byte)mt.Next();
+                }
+                for (int i = 0; i < length; i++)
+                {
+                    data[i] ^= xor[i];
+                }
+                ret = data;
             }
             return ret;
         }
         private byte[] DBTypeToBytes(DBType type, object data)
         {
 
-            BinaryUtil.FloatByteMap floatMap = new BinaryUtil.FloatByteMap();
+            FloatByteMap floatMap = new FloatByteMap();
             byte[] bytes = null;
 
             switch (type)
@@ -677,7 +615,7 @@ namespace FauFau
                     bytes = new byte[uShortList.Count * 2];
                     for (int i = 0; i < uShortList.Count; i++)
                     {
-                        BinaryUtil.WriteToBufferLE(ref bytes, uShortList[i], i * 2);
+                        WriteToBufferLE(ref bytes, uShortList[i], i * 2);
                     }
                     break;
                 case DBType.UIntArray:
@@ -685,7 +623,7 @@ namespace FauFau
                     bytes = new byte[uIntList.Count * 4];
                     for (int i = 0; i < uIntList.Count; i++)
                     {
-                        BinaryUtil.WriteToBufferLE(ref bytes, uIntList[i], i * 4);
+                        WriteToBufferLE(ref bytes, uIntList[i], i * 4);
                     }
                     break;
                 case DBType.Vector2Array:
@@ -694,8 +632,8 @@ namespace FauFau
                     bytes = new byte[vector2List.Count * 8];
                     for (int i = 0, x = 0; i < vector2List.Count; i++, x += 8)
                     {
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector2List[i].x, x);
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector2List[i].y, x + 4);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector2List[i].x, x);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector2List[i].y, x + 4);
                     }
                     break;
                 case DBType.Vector3Array:
@@ -703,9 +641,9 @@ namespace FauFau
                     bytes = new byte[vector3List.Count * 12];
                     for (int i = 0, x = 0; i < vector3List.Count; i++, x += 12)
                     {
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector3List[i].x, x);
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector3List[i].y, x + 4);
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector3List[i].z, x + 8);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector3List[i].x, x);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector3List[i].y, x + 4);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector3List[i].z, x + 8);
                     }
                     break;
                 case DBType.Vector4Array:
@@ -713,10 +651,10 @@ namespace FauFau
                     bytes = new byte[vector4List.Count * 16];
                     for (int i = 0, x = 0; i < vector4List.Count; i++, x += 16)
                     {
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].x, x);
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].y, x + 4);
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].z, x + 8);
-                        BinaryUtil.WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].w, x + 12);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].x, x);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].y, x + 4);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].z, x + 8);
+                        WriteToBufferLE(ref bytes, ref floatMap, vector4List[i].w, x + 12);
                     }
                     break;
             }
@@ -724,7 +662,7 @@ namespace FauFau
         }
         private object BytesToDBType(DBType type, byte[] data)
         {
-            BinaryUtil.FloatByteMap floatMap = new BinaryUtil.FloatByteMap();
+            FloatByteMap floatMap = new FloatByteMap();
 
             switch (type)
             {
@@ -741,7 +679,7 @@ namespace FauFau
                     {
                         for (int i = 0; i < data.Length; i += 2)
                         {
-                            uShortList.Add(BinaryUtil.UShortFromBufferLE(ref data, i));
+                            uShortList.Add(UShortFromBufferLE(ref data, i));
                         }
                     }
                     return uShortList;
@@ -751,7 +689,7 @@ namespace FauFau
                     {
                         for (int i = 0; i < data.Length; i += 4)
                         {
-                            uIntList.Add(BinaryUtil.UIntFromBufferLE(ref data, i));
+                            uIntList.Add(UIntFromBufferLE(ref data, i));
                         }
                     }
                     return uIntList;
@@ -763,8 +701,8 @@ namespace FauFau
                         for (int i = 0; i < data.Length; i += 8)
                         {
                             Vector2 v2 = new Vector2();
-                            v2.x = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i);
-                            v2.y = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i + 4);
+                            v2.x = FloatFromBufferLE(ref data, ref floatMap, i);
+                            v2.y = FloatFromBufferLE(ref data, ref floatMap, i + 4);
                             vector2List.Add(v2);
                         }
                     }
@@ -777,9 +715,9 @@ namespace FauFau
                         for (int i = 0; i < data.Length; i += 12)
                         {
                             Vector3 v3 = new Vector3();
-                            v3.x = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i);
-                            v3.y = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i + 4);
-                            v3.z = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i + 8);
+                            v3.x = FloatFromBufferLE(ref data, ref floatMap, i);
+                            v3.y = FloatFromBufferLE(ref data, ref floatMap, i + 4);
+                            v3.z = FloatFromBufferLE(ref data, ref floatMap, i + 8);
                             vector3List.Add(v3);
                         }
                     }
@@ -792,10 +730,10 @@ namespace FauFau
                         for (int i = 0; i < data.Length; i += 16)
                         {
                             Vector4 v4 = new Vector4();
-                            v4.x = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i);
-                            v4.y = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i + 4);
-                            v4.z = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i + 8);
-                            v4.w = BinaryUtil.FloatFromBufferLE(ref data, ref floatMap, i + 12);
+                            v4.x = FloatFromBufferLE(ref data, ref floatMap, i);
+                            v4.y = FloatFromBufferLE(ref data, ref floatMap, i + 4);
+                            v4.z = FloatFromBufferLE(ref data, ref floatMap, i + 8);
+                            v4.w = FloatFromBufferLE(ref data, ref floatMap, i + 12);
                             vector4List.Add(v4);
                         }
                     }
@@ -932,6 +870,30 @@ namespace FauFau
         {
             return dbTypeLookup[(byte)type];
         }
+
+        private static DBType[] dataTypes = new DBType[]
+        {
+                DBType.String,
+                DBType.Blob,
+                DBType.ByteArray,
+                DBType.UShortArray,
+                DBType.UIntArray,
+                DBType.Vector2Array,
+                DBType.Vector3Array,
+                DBType.Vector4Array
+        };
+
+        public static bool IsDataType(DBType type)
+        {
+            for (int i = 0; i < dataTypes.Length; i++)
+            {
+                if (type == dataTypes[i])
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         #endregion
 
         #region Subclasses
@@ -1028,154 +990,10 @@ namespace FauFau
         {
             public uint Id;
             public DBType Type;
+            public int Padding = 0;
         }
         #endregion
 
-        #region Custom datatypes
-        public class Vector2 : ReadWrite
-        {
-            public float x;
-            public float y;
-
-            public void Read(BinaryStream bs)
-            {
-                x = bs.Read.Float();
-                y = bs.Read.Float();
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                bs.Write.Float(x);
-                bs.Write.Float(y);
-            }
-        }
-        public class Vector3 : ReadWrite
-        {
-            public float x;
-            public float y;
-            public float z;
-
-            public void Read(BinaryStream bs)
-            {
-                x = bs.Read.Float();
-                y = bs.Read.Float();
-                z = bs.Read.Float();
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                bs.Write.Float(x);
-                bs.Write.Float(y);
-                bs.Write.Float(z);
-            }
-        }
-        public class Vector4 : ReadWrite
-        {
-            public float x;
-            public float y;
-            public float z;
-            public float w;
-
-            public void Read(BinaryStream bs)
-            {
-                x = bs.Read.Float();
-                y = bs.Read.Float();
-                z = bs.Read.Float();
-                w = bs.Read.Float();
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                bs.Write.Float(x);
-                bs.Write.Float(y);
-                bs.Write.Float(z);
-                bs.Write.Float(w);
-            }
-        }
-        public class Box3 : ReadWrite
-        {
-            public Vector3 min;
-            public Vector3 max;
-
-            public void Read(BinaryStream bs)
-            {
-                min = Read<Vector3>(bs);
-                max = Read<Vector3>(bs);
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                StaticDB.Write(min, bs);
-                StaticDB.Write(max, bs);
-            }
-        }
-        public class Matrix4x4 : ReadWrite
-        {
-            public Vector4 x;
-            public Vector4 y;
-            public Vector4 z;
-            public Vector4 w;
-
-            public void Read(BinaryStream bs)
-            {
-                x = Read<Vector4>(bs);
-                y = Read<Vector4>(bs);
-                z = Read<Vector4>(bs);
-                w = Read<Vector4>(bs);
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                Write<Vector4>(x, bs);
-                Write<Vector4>(y, bs);
-                Write<Vector4>(z, bs);
-                Write<Vector4>(w, bs);
-            }
-        }
-        public class Half3 : ReadWrite
-        {
-            public float x;
-            public float y;
-            public float z;
-
-            public void Read(BinaryStream bs)
-            {
-                x = bs.Read.Half();
-                y = bs.Read.Half();
-                z = bs.Read.Half();
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                bs.Write.Half(x);
-                bs.Write.Half(y);
-                bs.Write.Half(z);
-            }
-        }
-        public class HalfMatrix4x3 : ReadWrite
-        {
-            public Half3 x;
-            public Half3 y;
-            public Half3 z;
-            public Half3 w;
-
-            public void Read(BinaryStream bs)
-            {
-                x = Read<Half3>(bs);
-                y = Read<Half3>(bs);
-                z = Read<Half3>(bs);
-                w = Read<Half3>(bs);
-            }
-
-            public void Write(BinaryStream bs)
-            {
-                Write<Half3>(x, bs);
-                Write<Half3>(y, bs);
-                Write<Half3>(z, bs);
-                Write<Half3>(w, bs);
-            }
-        }
-        #endregion
 
         #region Sdb file structs
         private class HeaderInfo : ReadWrite

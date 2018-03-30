@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FauFau.Util
 {
-    static class Checksum
+    public static class Checksum
     {
         public static uint FFnv32(string str)
         {

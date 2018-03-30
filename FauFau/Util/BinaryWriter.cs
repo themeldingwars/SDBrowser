@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using static FauFau.Util.BinaryStream;
 using static FauFau.Util.BinaryUtil;
+using static FauFau.Util.BinaryWrapper;
 
 namespace FauFau.Util
 {
@@ -938,6 +939,21 @@ namespace FauFau.Util
             }
             SetTextEncoding(encoding);
             stream.baseStream.WriteByte(_textEncoder.GetBytes(str));
+        }
+
+        /// <summary>
+        /// Writes a ReadWrite type object to the stream.
+        /// </summary>
+        public void Type<T>(T obj) where T : ReadWrite
+        {
+            obj.Write(stream);
+        }
+        public void TypeList<T>(List<T> obj) where T : ReadWrite
+        {
+            foreach (T o in obj)
+            {
+                o.Write(stream);
+            }
         }
 
         private void SetTextEncoding(TextEncoding encoding)

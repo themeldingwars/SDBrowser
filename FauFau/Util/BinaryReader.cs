@@ -2,7 +2,9 @@
 using System.Text;
 using static FauFau.Util.BinaryStream;
 using static FauFau.Util.BinaryUtil;
+using static FauFau.Util.BinaryWrapper;
 
+// TODO: Make array/list readers read entire array as a blob instead of each element. (speed)
 namespace FauFau.Util
 {
     public class BinaryReader
@@ -868,6 +870,39 @@ namespace FauFau.Util
             return _textEncoder.GetString(ByteArray(_textCharacterWidth * length));
         }
 
+
+        /// <summary>
+        /// Reads a ReadWrite type object from the stream.
+        /// </summary>
+        public T Type<T>() where T : ReadWrite, new()
+        {
+            T ret = new T();
+            ret.Read(stream);
+            return ret;
+        }
+
+        /// <summary>
+        /// Reads a list of ReadWrite type objects from the stream.
+        /// </summary>
+        public List<T> TypeList<T>(int count) where T : ReadWrite, new()
+        {
+            List<T> ret = new List<T>(count);
+            for (int i = 0; i < count; i++)
+            {
+                T entry = new T();
+                entry.Read(stream);
+                ret.Add(entry);
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Reads a list of ReadWrite type objects from the stream.
+        /// </summary>
+        public List<T> TypeList<T>(uint count) where T : ReadWrite, new()
+        {
+            return TypeList<T>((int)count);
+        }
 
         private void SetTextEncoding(TextEncoding encoding)
         {
