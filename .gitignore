@@ -4,6 +4,8 @@ FauFau.Test/[Bb]in/
 FauFau.Test/[Oo]bj/
 FauFau.SDBrowser/[Bb]in/
 FauFau.SDBrowser/[Oo]bj/
+FauFau.Repo/[Bb]in/
+FauFau.Repo/[Oo]bj/
 packages/
 .vs/
 *.suo

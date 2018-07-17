@@ -9,12 +9,19 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using Be.Windows.Forms;
+using FauFau.CommmonDataTypes;
 using static FauFau.StaticDB;
+
+
+using System.Text.RegularExpressions;
+using System.Drawing.Text;
 
 namespace FauFau.SDBrowser
 {
     public partial class Form1 : Form
     {
+
+
         private StaticDB sdb;
         private int openTable = -1;
 
@@ -32,28 +39,51 @@ namespace FauFau.SDBrowser
         private Control[] inspectorControls;
         private System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
 
-        CustomVScrollbar lvTablesVScroll;
-        CustomVScrollbar dgvRowsVScroll;
-        CustomHScrollbar dgvRowsHScroll;
+
+        private List<DBType> rawCopyableTypes = new List<DBType>
+        {
+            DBType.AsciiChar,
+            DBType.String,
+        };
+
+        private List<DBType> searchableTypes = new List<DBType>
+        {
+            DBType.AsciiChar,
+            DBType.Double,
+            DBType.Float,
+            DBType.Half,
+            DBType.Int,
+            DBType.Long,
+            DBType.SByte,
+            DBType.Short,
+            DBType.String,
+            DBType.UInt,
+            DBType.ULong,
+            DBType.UShort,
+            DBType.Byte
+        };
+
+
+        private int contextRow = -1;
+        private int contextColumn = -1;
 
         private int currentRow;
         private int currentColumn;
-
-
 
         public int CurrentRow
         {
             get { return currentRow; }
             set
             {
-                if(currentRow != value)
+                if (currentRow != value)
                 {
                     currentRow = value;
-                    if (dgvRowsVScroll.Value != value) dgvRowsVScroll.Value = value;
+                    //if (dsbVerticalGrid.Value != value) dsbVerticalGrid.Value = value;
                     GotoCell(currentRow, currentColumn);
                 }
             }
         }
+
         public int CurrentColumn
         {
             get { return currentColumn; }
@@ -62,7 +92,7 @@ namespace FauFau.SDBrowser
                 if (currentColumn != value)
                 {
                     currentColumn = value;
-                    if(dgvRowsHScroll.Value != value) dgvRowsHScroll.Value = value;
+                    //if(dsbHorizontalGrid.Value != value) dsbHorizontalGrid.Value = value;
                     GotoCell(currentRow, currentColumn);
                 }
             }
@@ -75,164 +105,83 @@ namespace FauFau.SDBrowser
 
         private void GotoCell(int row, int column)
         {
-            if(row > -1 && column > -1)
+            if (row > -1 && column > -1)
             {
                 if (dgvRows.Rows != null && dgvRows.Rows.Count > row)
                 {
                     if (dgvRows.Rows[row].Cells != null && dgvRows.Rows[row].Cells.Count > column)
                     {
-                        //Console.WriteLine(row);
-                        //dgvRows.CurrentCell = dgvRows.Rows[row].Cells[column];
 
-
-                        
-
-                        dgvRows.FirstDisplayedScrollingRowIndex = (int)Map(row, 0, dgvRows.Rows.Count, 0, dgvRows.Rows.Count - ((dgvRows.Height - 80) / 22));
+                        dgvRows.FirstDisplayedScrollingRowIndex = row;
                         dgvRows.FirstDisplayedScrollingColumnIndex = column;
                     }
                 }
             }
         }
 
+
+
         public Form1()
         {
             InitializeComponent();
 
-            this.lvTables.View = View.Details;
-            this.lvTables.Columns.Add("Name");
-            this.lvTables.Columns[0].Width = this.lvTables.Width - 18;
-            this.lvTables.HeaderStyle = ColumnHeaderStyle.None;
 
-            dgvRows.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 60, 63, 65);
-            dgvRows.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(255, 200, 200, 200);
-            dgvRows.EnableHeadersVisualStyles = false;
-            dgvRows.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.EnableResizing;
-            dgvRows.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvRows.VirtualMode = true;
-            dgvRows.RowHeadersWidth = 80;
-
-            // custom table list scrollbar
-            lvTablesVScroll = SetupScrollbar(vScrollBar1);      
-            lvTablesVScroll.BringToFront();
-            lvTablesVScroll.Scroll += (s, e) =>
+            foreach (DBType type in Enum.GetValues(typeof(DBType)))
             {
-                lvTables.TopItem = lvTables.Items[lvTablesVScroll.Value];
-                //lvTables.EnsureVisible(lvTablesVScroll.Value);
-            };
-            lvTables.SelectedIndexChanged += (s, e) => {
-                if (lvTables.SelectedIndices.Count > 0)
+                if (searchableTypes.Contains(type))
                 {
-                    OpenTable(lvTables.SelectedIndices[0]);
+                    cbSearchType.Items.Add(type);
+                }
+            }
+
+
+            lbTables.SelectedIndexChanged += (s, e) =>
+            {
+                if (lbTables.SelectedIndices.Count > 0)
+                {
+                    OpenTable(lbTables.SelectedIndices[0]);
                 }
             };
-            lvTables.TopItemChanged += (s, e) => {
-                lvTablesVScroll.Value = lvTables.TopItem.Index;
-            };
-
-            dgvRowsVScroll = SetupScrollbar(vScrollBar2);
-            dgvRowsVScroll.Maximum = 1;
-            dgvRowsVScroll.Name = "VDGV";
-            dgvRowsVScroll.BringToFront();
-            dgvRowsVScroll.Scroll += (s, e) =>
-            {              
-                CurrentRow = dgvRowsVScroll.Value;
-                //dgvRows.Rows[0].Cells[0]s EnsureVisible(dgvRowsVScroll.Value);
-            };
-
-            dgvRows.Scroll += (s, e) => 
-            {
-                //Console.WriteLine(dgvRows.VerticalScrollingOffset);
-            };
-
-            
-            
-
-            dgvRowsHScroll = SetupHScrollbar(hScrollBar1);
-            dgvRowsHScroll.Maximum = 1;
-            dgvRowsHScroll.Name = "HDGV";
-            dgvRowsHScroll.BringToFront();
-            dgvRowsHScroll.Scroll += (s, e) =>
-            {
-                //dgvRows.HorizontalScrollingOffset = dgvRowsHScroll.Value;
-                dgvRows.FirstDisplayedScrollingColumnIndex = dgvRowsHScroll.Value;
-                //dgvRows.Rows[0].Cells[0]s EnsureVisible(dgvRowsVScroll.Value);
-            };
-
-            //dgvRowsHScroll.Hide();
-            //dgvRowsVScroll.Hide();
-
-            dgvRows.MouseWheel += (s, e) =>
-             {
-                 if (e.Delta > 0 && CurrentRow > 0)
-                 {
-                     CurrentRow--;
-                 }
-                 else if (e.Delta < 0 && CurrentRow < dgvRows.RowCount-1)
-                 {
-                     CurrentRow++;
-                 }
-             };
-
 
             LoadTableAndFieldNames();
-            LoadDB(@"D:\backup\clientdb\1962.sd2");
-        }
+            //LoadDB(@"V:\refall\Firefall\system\db\clientdb.sd2");
 
-
-        private CustomVScrollbar SetupScrollbar(ScrollBar target)
-        {
-            CustomVScrollbar cs = new CustomVScrollbar();
-            target.Parent.Controls.Add(cs);
-            target.Enabled = false;
-            target.Visible = false;
-
-            cs.BorderStyle = BorderStyle.None;
-            cs.Anchor = target.Anchor;
-            cs.BackColor = Color.FromArgb(255, 69, 73, 74);
-            cs.ChannelColor = cs.BackColor;
-            cs.LargeChange = target.LargeChange;
-            cs.Location = target.Location;
-            cs.Maximum = target.Maximum;
-            cs.Minimum = target.Minimum;
-            cs.MinimumSize = target.MinimumSize;
-            cs.Size = target.Size;
-            cs.SmallChange = 1;
-            cs.Value = 0;
+            /*
             
-            return cs;
+            int count = 0;
+            int total = 0;
+            foreach (var table in sdb)
+            {
+                total++;
+                if(stringDb.ContainsKey(table.Id))
+                {
+                    count++;
+                }
+                foreach(var column in table.Columns)
+                {
+                    total++;
+                    if (stringDb.ContainsKey(column.Id))
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            rtbOutput.Text = count + " of " + total + "fieldnames known";
+
+            */
+
         }
 
-        private CustomHScrollbar SetupHScrollbar(ScrollBar target)
-        {
-            CustomHScrollbar cs = new CustomHScrollbar();
-            target.Parent.Controls.Add(cs);
-            target.Enabled = false;
-            target.Visible = false;
-
-            cs.BorderStyle = BorderStyle.None;
-            cs.Anchor = target.Anchor;
-            cs.BackColor = Color.FromArgb(255, 69, 73, 74);
-            cs.ChannelColor = cs.BackColor;
-            cs.LargeChange = target.LargeChange;
-            cs.Location = target.Location;
-            cs.Maximum = target.Maximum;
-            cs.Minimum = target.Minimum;
-            cs.MinimumSize = target.MinimumSize;
-            cs.Size = target.Size;
-            cs.SmallChange = 1;
-            cs.Value = 0;
-
-            return cs;
-        }
 
         public static string ByteArrayToString(byte[] bytes)
         {
-            if(bytes == null)
+            if (bytes == null)
             {
 
                 return "OUCH";
             }
-            StringBuilder hex = new StringBuilder(bytes.Length*3);
+            StringBuilder hex = new StringBuilder(bytes.Length * 3);
             foreach (byte b in bytes)
             {
                 hex.AppendFormat("{0:x2} ", b);
@@ -240,7 +189,7 @@ namespace FauFau.SDBrowser
             return hex.ToString().ToUpper();
         }
 
-        static IEnumerable<IEnumerable<T>>GetPermutationsWithRept<T>(IEnumerable<T> list, int length)
+        static IEnumerable<IEnumerable<T>> GetPermutationsWithRept<T>(IEnumerable<T> list, int length)
         {
             if (length == 1) return list.Select(t => new T[] { t });
             return GetPermutationsWithRept(list, length - 1)
@@ -253,7 +202,7 @@ namespace FauFau.SDBrowser
             if (File.Exists(filePath))
             {
                 // clear
-                lvTables.Items.Clear();
+                lbTables.Items.Clear();
                 dgvRows.Rows.Clear();
                 dgvRows.Columns.Clear();
                 ClearInspector();
@@ -264,21 +213,19 @@ namespace FauFau.SDBrowser
 
                 lblPatch.Text = "Patch: " + sdb.Patch;
                 lblFlags.Text = "Flags: " + sdb.Flags;
-                lblCreated.Text ="Created: " + sdb.Timestamp.ToString() + " UTC";
+                lblCreated.Text = "Created: " + sdb.Timestamp.ToString() + " UTC";
                 lblLoaded.Text = filePath;
 
 
                 for (int i = 0; i < sdb.Count(); i++)
                 {
-                    lvTables.Items.Add(i.ToString().PadRight(5) + GetTableOrFieldName(sdb[i].Id));
+                    lbTables.Items.Add(i.ToString().PadRight(5) + GetTableOrFieldName(sdb[i].Id));
                 }
-
-                lvTablesVScroll.Maximum = sdb.Count()+9;
-                lvTablesVScroll.Value = 0;
 
 
             }
         }
+
 
         private string GetIdAsHex(uint id)
         {
@@ -287,7 +234,7 @@ namespace FauFau.SDBrowser
 
         private string GetTableOrFieldName(uint id)
         {
-            if(stringDb.ContainsKey(id))
+            if (stringDb.ContainsKey(id))
             {
                 return stringDb[id];
             }
@@ -298,7 +245,7 @@ namespace FauFau.SDBrowser
         }
         private void ClearInspector()
         {
-            if(flpInspect != null)
+            if (flpInspect != null)
             {
                 List<Control> clear = new List<Control>();
                 foreach (Control c in flpInspect.Controls)
@@ -340,32 +287,60 @@ namespace FauFau.SDBrowser
 
                 }
             }
+
+            /*
+            if (File.Exists("console.log"))
+            {
+                string log = File.ReadAllText("console.log");
+                usedStrings = log.Split(new char[] {' ', '\n' }).ToList();
+
+                foreach (string stra in usedStrings)
+                {
+                    string str = stra.Trim().Replace("'", "");
+                    uint key = FauFau.Util.Checksum.FFnv32(str);
+
+                    if (!stringDb.ContainsKey(key))
+                    {
+                        stringDb.Add(key, str);
+                        dupes.Add(key, new List<string>());
+                        dupes[key].Add(str);
+                        Console.WriteLine(str + "\n");
+                    }
+                    else
+                    {
+                        if (!str.Equals(stringDb[key]))
+                        {
+                            Console.WriteLine("collision: " + key + " : " + stringDb[key] + ", " + str);
+                            dupes[key].Add(str);
+                        }
+                    }
+
+                }
+            }
+            */
+
         }
         private void OpenTable(int index)
         {
             currentRow = -1;
             currentColumn = -1;
-            FixScrollWidth(dgvRows, dgvRowsHScroll);
-            dgvRowsVScroll.Maximum = sdb[index].Rows.Count() + 10;
-
-            
 
             openTable = index;
             dgvRows.Columns.Clear();
             dgvRows.Rows.Clear();
 
-            dgvRows.SuspendLayout(); 
+            dgvRows.SuspendLayout();
             dgvRows.RowHeadersVisible = false;
 
-            foreach(Column c in sdb[index].Columns)
+            foreach (Column c in sdb[index].Columns)
             {
                 string fName = GetTableOrFieldName(c.Id);
                 string hexId = GetIdAsHex(c.Id);
-                
+
                 dgvRows.Columns.Add(GetIdAsHex(c.Id), c.Type.ToString() + "\n" + hexId + "\n" + (!fName.Equals(hexId) ? fName : "?") + "\n");
                 var col = dgvRows.Columns[dgvRows.ColumnCount - 1];
-                
-                if(sdb[index].NullableColumn.Contains(c))
+
+                if (sdb[index].NullableColumn.Contains(c))
                 {
                     col.HeaderCell.Style.BackColor = Color.FromArgb(255, 65, 45, 45);
                 }
@@ -416,12 +391,12 @@ namespace FauFau.SDBrowser
                     InspectRow(0);
                 }
             }
-            
+
         }
         private object CellPreview(object data, DBType type)
         {
             if (data == null) return null;
-            switch(type)
+            switch (type)
             {
                 case DBType.Byte:
                 case DBType.UShort:
@@ -475,11 +450,12 @@ namespace FauFau.SDBrowser
         // fix table width
         private void splitContainer1_Panel1_Resize(object sender, EventArgs e)
         {
-            if (lvTables.Columns.Count > 0)
+            /*
+            if (lbTables.Columns.Count > 0)
             {
-                this.lvTables.Columns[0].Width = this.lvTables.Width-18;
+                this.lbTables.Columns[0].Width = this.lbTables.Width - 18;
             }
-
+            */
         }
 
         public static uint SwapEndianness(uint value)
@@ -492,13 +468,6 @@ namespace FauFau.SDBrowser
             return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
         }
 
-        private void lvTables_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-                
-            
-
-        }
 
         private void btnLoad_Click(object sender, EventArgs e)
         {
@@ -515,7 +484,7 @@ namespace FauFau.SDBrowser
 
         private void dgvRows_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
         {
-            if(e.ColumnIndex < sdb[openTable].Columns.Count && e.RowIndex < sdb[openTable].Rows.Count)
+            if (e.ColumnIndex < sdb[openTable].Columns.Count && e.RowIndex < sdb[openTable].Rows.Count)
             {
                 if (dgvRows.Rows[e.RowIndex].HeaderCell.Value == null)
                 {
@@ -523,6 +492,7 @@ namespace FauFau.SDBrowser
                 }
 
                 e.Value = CellPreview(sdb[openTable][e.RowIndex][e.ColumnIndex], sdb[openTable].Columns[e.ColumnIndex].Type);
+
             }
         }
 
@@ -531,18 +501,19 @@ namespace FauFau.SDBrowser
         {
             StaticDB.DBType type = (StaticDB.DBType)cbSearchType.SelectedIndex + 1;
 
-            if(type == StaticDB.DBType.Unknown)
+            if (type == DBType.Unknown)
             {
                 lbSearchResults.Items.Clear();
                 lbSearchResults.Items.Add("You have to pick a datatype first");
             }
             else
             {
+
                 switch (type)
                 {
-                    case StaticDB.DBType.Byte:
+                    case DBType.Byte:
                         byte v1;
-                        if(byte.TryParse(tbSearchInput.Text, out v1))
+                        if (byte.TryParse(tbSearchInput.Text, out v1))
                         {
                             Search(v1, type, table);
                         }
@@ -550,9 +521,9 @@ namespace FauFau.SDBrowser
                         {
                             lbSearchResults.Items.Clear();
                             lbSearchResults.Items.Add("Invalid input");
-                        }                  
+                        }
                         break;
-                    case StaticDB.DBType.UShort:
+                    case DBType.UShort:
                         ushort v2;
                         if (ushort.TryParse(tbSearchInput.Text, out v2))
                         {
@@ -564,7 +535,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.UInt:
+                    case DBType.UInt:
                         uint v3;
                         if (uint.TryParse(tbSearchInput.Text, out v3))
                         {
@@ -576,7 +547,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.ULong:
+                    case DBType.ULong:
                         ulong v4;
                         if (ulong.TryParse(tbSearchInput.Text, out v4))
                         {
@@ -588,7 +559,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.SByte:
+                    case DBType.SByte:
                         sbyte v5;
                         if (sbyte.TryParse(tbSearchInput.Text, out v5))
                         {
@@ -600,7 +571,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.Short:
+                    case DBType.Short:
                         short v6;
                         if (short.TryParse(tbSearchInput.Text, out v6))
                         {
@@ -612,7 +583,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.Int:
+                    case DBType.Int:
                         int v7;
                         if (int.TryParse(tbSearchInput.Text, out v7))
                         {
@@ -624,7 +595,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.Long:
+                    case DBType.Long:
                         long v8;
                         if (long.TryParse(tbSearchInput.Text, out v8))
                         {
@@ -636,7 +607,8 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.Float:
+                    case DBType.Float:
+                    case DBType.Half:
                         float v9;
                         if (float.TryParse(tbSearchInput.Text, out v9))
                         {
@@ -648,7 +620,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.Double:
+                    case DBType.Double:
                         double v10;
                         if (double.TryParse(tbSearchInput.Text, out v10))
                         {
@@ -660,57 +632,7 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.String:
-
-                        if (tbSearchInput.Text.Length > 1)
-                        {
-                            Search(tbSearchInput.Text, type, table);
-                        }
-                        else
-                        {
-                            lbSearchResults.Items.Clear();
-                            lbSearchResults.Items.Add("Please input at least 2 chars");
-                        }
-
-                        
-                        break;
-                    case StaticDB.DBType.Vector2:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Vector3:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Vector4:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Matrix4x4:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Blob:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Box3:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Vector2Array:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Vector3Array:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Vector4Array:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.AsciiChar:
+                    case DBType.AsciiChar:
                         if (tbSearchInput.Text.Length == 1)
                         {
                             Search(Encoding.ASCII.GetBytes(tbSearchInput.Text)[0], type, table);
@@ -721,42 +643,116 @@ namespace FauFau.SDBrowser
                             lbSearchResults.Items.Add("Invalid input");
                         }
                         break;
-                    case StaticDB.DBType.ByteArray:
+                    case DBType.String:
+                        if (tbSearchInput.Text.Length > 1)
+                        {
+                            Search(tbSearchInput.Text, type, table);
+                        }
+                        else
+                        {
+                            lbSearchResults.Items.Clear();
+                            lbSearchResults.Items.Add("Please input at least 2 chars");
+                        }
+                        break;
+
+                    // array contains sequence
+                    case DBType.Blob:
+                    case DBType.ByteArray:
+                        List<byte> bytes = new List<byte>();
+                        string[] split = tbSearchInput.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string s in split)
+                        {
+                            byte v11;
+                            if (byte.TryParse(s.Trim(), out v11))
+                            {
+                                bytes.Add(v11);
+                            }
+                        }
+                        if (bytes.Count > 0)
+                        {
+                            Search(bytes, type, table);
+                        }
+                        else
+                        {
+                            lbSearchResults.Items.Clear();
+                            lbSearchResults.Items.Add("Invalid input");
+                        }
+                        break;
+                    case DBType.UShortArray:
+                        List<ushort> ushorts = new List<ushort>();
+                        string[] split2 = tbSearchInput.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string s in split2)
+                        {
+                            ushort v12;
+                            if (ushort.TryParse(s.Trim(), out v12))
+                            {
+                                ushorts.Add(v12);
+                            }
+                        }
+                        if (ushorts.Count > 0)
+                        {
+                            Search(ushorts, type, table);
+                        }
+                        else
+                        {
+                            lbSearchResults.Items.Clear();
+                            lbSearchResults.Items.Add("Invalid input");
+                        }
+                        break;
+                    case DBType.UIntArray:
+                        List<uint> uints = new List<uint>();
+                        string[] split3 = tbSearchInput.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string s in split3)
+                        {
+                            uint v13;
+                            if (uint.TryParse(s.Trim(), out v13))
+                            {
+                                uints.Add(v13);
+                            }
+                        }
+                        if (uints.Count > 0)
+                        {
+                            Search(uints, type, table);
+                        }
+                        else
+                        {
+                            lbSearchResults.Items.Clear();
+                            lbSearchResults.Items.Add("Invalid input");
+                        }
+                        break;
+
+                    // not implemented
+                    case DBType.Box3:
+                    case DBType.Vector2Array:
+                    case DBType.Vector3Array:
+                    case DBType.Vector4Array:
+                    case DBType.Vector2:
+                    case DBType.Vector3:
+                    case DBType.Vector4:
+                    case DBType.Matrix4x4:
+                    case DBType.HalfMatrix4x3:
                         lbSearchResults.Items.Clear();
                         lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
                         break;
-                    case StaticDB.DBType.UShortArray:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.UIntArray:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.HalfMatrix4x3:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
-                    case StaticDB.DBType.Half:
-                        lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
-                        break;
+
                 }
             }
 
         }
 
-        private void Search(object find, StaticDB.DBType type, int table = -1, bool clear = true)
+
+
+        private void Search(object find, DBType type, int table = -1, bool clear = true)
         {
-            /*
-            if(clear)
+
+            if (clear)
             {
                 lbSearchResults.Items.Clear();
             }
 
-            if(table == -1)
+            if (table == -1)
             {
-                for (int i = 0; i < sdb.body.GetTableList().Count; i++)
+                for (int i = 0; i < sdb.Tables.Count(); i++)
                 {
                     Search(find, type, i, false);
                 }
@@ -764,167 +760,109 @@ namespace FauFau.SDBrowser
             else
             {
                 List<string> matches = new List<string>();
-                int x = 0;
-                bool shtap = false;
-                foreach (Tuple<string, StaticDB.DBType> field in sdb.body.GetFields(table))
+                for (int column = 0; column < sdb[table].Columns.Count(); column++)
                 {
-                    if (field.Item2 == type)
+                    if (sdb[table].Columns[column].Type == type)
                     {
-                        for (int j = 0; j < sdb.body.GetRowCount(table); j++)
+
+                        switch (type)
                         {
-                            if(!shtap)
-                            {
-                                object current = sdb.body.GetCell(table, j, x);
-
-                                switch (type)
+                            //simple equals
+                            case DBType.Byte:
+                            case DBType.UShort:
+                            case DBType.UInt:
+                            case DBType.ULong:
+                            case DBType.SByte:
+                            case DBType.Short:
+                            case DBType.Int:
+                            case DBType.Long:
+                            case DBType.Float:
+                            case DBType.Double:
+                            case DBType.AsciiChar:
+                            case DBType.Half:
+                                for (int row = 0; row < sdb[table].Rows.Count(); row++)
                                 {
-                                    case StaticDB.DBType.Byte:
-                                        if ((byte)current == (byte)find)
+                                    if (sdb[table][row][column] != null)
+                                    {
+                                        if (sdb[table][row][column].Equals(find))
                                         {
-                                            matches.Add(table + ":" + j + ":" + x);
+                                            matches.Add(table + ":" + row + ":" + column);
                                         }
-                                        break;
-                                    case StaticDB.DBType.UShort:
-                                        if ((ushort)current == (ushort)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.UInt:
-                                        if ((uint)current == (uint)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.ULong:
-                                        if ((ulong)current == (ulong)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.SByte:
-                                        if ((sbyte)current == (sbyte)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.Short:
-                                        if ((short)current == (short)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.Int:
-                                        if ((int)current == (int)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.Long:
-                                        if ((long)current == (long)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.Float:
-                                        if ((float)current == (float)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.Double:
-                                        if ((double)current == (double)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.String:
-
-                                        byte[] b = sdb.body.GetDataEntry((uint)current, true);
-                                        uint f = uint.MaxValue;
-                                        
-                                        if ((uint.TryParse((string)find, out f) && (uint)current == f) || b != null && Encoding.UTF8.GetString(b).ToLower().Contains(((string)find).ToLower()))
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.Vector2:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Vector3:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Vector4:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Matrix4x4:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Blob:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Box3:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Vector2Array:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Vector3Array:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Vector4Array:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.AsciiChar:
-                                        if ((byte)current == (byte)find)
-                                        {
-                                            matches.Add(table + ":" + j + ":" + x);
-                                        }
-                                        break;
-                                    case StaticDB.DBType.ByteArray:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.UShortArray:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.UIntArray:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.HalfMatrix4x3:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
-                                    case StaticDB.DBType.Half:
-                                        matches.Add("SHtap! I cant search for that datatype yet!");
-                                        shtap = true;
-                                        break;
+                                    }
                                 }
+                                break;
 
-                            }
-                            
+                            // string contains sequence
+                            case DBType.String:
+                                string findString = ((string)find).ToLower();
+                                for (int row = 0; row < sdb[table].Rows.Count(); row++)
+                                {
+                                    if (sdb[table][row][column] != null)
+                                    {
+                                        string currentString = ((string)sdb[table][row][column]).ToLower();
+                                        if (currentString.Contains(findString))
+                                        {
+                                            matches.Add(table + ":" + row + ":" + column);
+                                        }
+                                    }
+                                }
+                                break;
+
+                            // array contains sequence
+                            case DBType.Blob:
+                            case DBType.ByteArray:
+                                List<byte> subset = (List<byte>)find;
+                                for (int row = 0; row < sdb[table].Rows.Count(); row++)
+                                {
+                                    if (!subset.Except((List<byte>)sdb[table][row][column]).Any())
+                                    {
+                                        matches.Add(table + ":" + row + ":" + column);
+                                    }
+                                }
+                                break;
+                            case DBType.UShortArray:
+                                List<ushort> subset2 = (List<ushort>)find;
+                                for (int row = 0; row < sdb[table].Rows.Count(); row++)
+                                {
+                                    if (!subset2.Except((List<ushort>)sdb[table][row][column]).Any())
+                                    {
+                                        matches.Add(table + ":" + row + ":" + column);
+                                    }
+                                };
+                                break;
+                            case DBType.UIntArray:
+                                List<uint> subset3 = (List<uint>)find;
+                                for (int row = 0; row < sdb[table].Rows.Count(); row++)
+                                {
+                                    if (!subset3.Except((List<uint>)sdb[table][row][column]).Any())
+                                    {
+                                        matches.Add(table + ":" + row + ":" + column);
+                                    }
+                                }
+                                break;
+
+                            // not implemented
+                            case DBType.Box3:
+                            case DBType.Vector2Array:
+                            case DBType.Vector3Array:
+                            case DBType.Vector4Array:
+                            case DBType.Vector2:
+                            case DBType.Vector3:
+                            case DBType.Vector4:
+                            case DBType.Matrix4x4:
+                            case DBType.HalfMatrix4x3:
+                                lbSearchResults.Items.Clear();
+                                lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
+                                break;
                         }
-
                     }
-                    x++;
                 }
 
-                if(matches.Count == 0)
+                if (matches.Count == 0)
                 {
                     //lvSearchResults.Items.Add("No results");
                 }
-                foreach(string m in matches)
+                foreach (string m in matches)
                 {
                     lbSearchResults.Items.Add(m);
                 }
@@ -932,79 +870,86 @@ namespace FauFau.SDBrowser
 
             }
 
-            */
-            
+
+
         }
 
         private void InspectRow(int row)
         {
-            /*
-            if (lvTables.SelectedIndices.Count > 0)
+
+            if (lbTables.SelectedIndices.Count > 0)
             {
                 flpInspect.SuspendLayout();
 
-                if(lvTables.SelectedIndices[0] != currentInspector)
+
+                if (lbTables.SelectedIndices[0] != currentInspector)
                 {
-                    currentInspector = lvTables.SelectedIndices[0];
-                    Tuple<string, StaticDB.DBType>[] fields = sdb.body.GetFields(currentInspector);
-                    inspectorControls = new Control[fields.Count()];
+                    currentInspector = lbTables.SelectedIndices[0];
+                    //Tuple<string, StaticDB.DBType>[] fields = sdb.body.GetFields(currentInspector);
+                    inspectorControls = new Control[sdb[currentInspector].Columns.Count()];
 
                     ClearInspector();
 
                     int x = 0;
-                    foreach (Tuple<string, StaticDB.DBType> field in fields)
+                    foreach (Column column in sdb[currentInspector].Columns)
                     {
                         FlowLayoutPanel p = new FlowLayoutPanel();
-                        
+
                         p.AutoSize = true;
                         p.MaximumSize = new Size(flpInspect.Width - 23, int.MaxValue);
-                        p.BackColor = Color.DarkGray;
+                        p.BackColor = Color.FromArgb(60, 63, 65);
 
                         Label l = new Label();
 
-                        string[] sp = field.Item1.Split(' ');
-                        string fName = sp[0];
-                        uint k = Convert.ToUInt32(fName, 16);
-
-                        if (stringDb.ContainsKey(k))
-                        {
-                            fName = stringDb[k];
-                        }
-
-                        l.Text = fName;
-                        l.BackColor = Color.Gray;
+                        l.Text = GetTableOrFieldName(column.Id);
+                        l.BackColor = Color.FromArgb(50, 50, 50);
                         l.Width = flpInspect.Width - 23;
                         l.Height = 15;
                         p.Controls.Add(l);
 
-                        Control value = CreateInspectorControl(field.Item2);
+                        Control value = CreateInspectorControl(column.Type);
                         inspectorControls[x] = value;
                         p.Controls.Add(value);
                         flpInspect.Controls.Add(p);
                         x++;
                     }
 
-                    
-                }
-                int y = 0;
-                foreach (Tuple<string, StaticDB.DBType> field in fields)
-                {
-                    object current = sdb.body.GetCell(lvTables.SelectedIndices[0], row, y);
-                    SetInspectorControlValue(field.Item2, inspectorControls[y], current);
-                    y++;
+
                 }
 
-                    
+                if (sdb[currentInspector].Count() > row)
+                {
+                    int y = 0;
+                    foreach (Column column in sdb[currentInspector].Columns)
+                    {
+
+                        object current = sdb[currentInspector][row][y];
+                        SetInspectorControlValue(column.Type, inspectorControls[y], current);
+                        y++;
+                    }
+
+                }
+                else
+                {
+                    int y = 0;
+                    foreach (Column column in sdb[currentInspector].Columns)
+                    {
+                        SetInspectorControlValue(column.Type, inspectorControls[y], null);
+                        y++;
+                    }
+                }
+
+
 
                 flpInspect.ResumeLayout(true);
 
             }
-            */
+
         }
 
-        private Control CreateInspectorControl(StaticDB.DBType type)
+        private Control CreateInspectorControl(DBType type)
         {
-            
+
             switch (type)
             {
                 case StaticDB.DBType.Byte:
@@ -1038,14 +983,14 @@ namespace FauFau.SDBrowser
                     return dgv2;
 
                 case StaticDB.DBType.Matrix4x4:
-                    DataGridView dgv3 = CreateInspectorGrid(new string[] {"X", "Y", "Z", "W"});
+                    DataGridView dgv3 = CreateInspectorGrid(new string[] { "X", "Y", "Z", "W" });
                     dgv3.Height = 115;
                     return dgv3;
 
                 case StaticDB.DBType.ByteArray:
                 case StaticDB.DBType.Blob:
                     return CreateInspectorHexBox();
-             
+
                 case StaticDB.DBType.Vector2Array:
                     DataGridView dgv4 = CreateInspectorGrid(new string[] { "X", "Y" });
                     dgv4.Height = 200;
@@ -1080,52 +1025,51 @@ namespace FauFau.SDBrowser
 
             return null;
         }
-        private void SetInspectorControlValue(StaticDB.DBType type, Control control, object value)
+        private void SetInspectorControlValue(DBType type, Control control, object value)
         {
-            /*
+
             switch (type)
             {
-                case StaticDB.DBType.Byte:
-                case StaticDB.DBType.UShort:
-                case StaticDB.DBType.UInt:
-                case StaticDB.DBType.ULong:
-                case StaticDB.DBType.SByte:
-                case StaticDB.DBType.Short:
-                case StaticDB.DBType.Int:
-                case StaticDB.DBType.Long:
-                case StaticDB.DBType.Float:
-                case StaticDB.DBType.Double:
-                case StaticDB.DBType.AsciiChar:
-                    ((TextBox)control).Text = value != null ? value.ToString() : "";
+                case DBType.Byte:
+                case DBType.UShort:
+                case DBType.UInt:
+                case DBType.ULong:
+                case DBType.SByte:
+                case DBType.Short:
+                case DBType.Int:
+                case DBType.Long:
+                case DBType.Float:
+                case DBType.Double:
+                case DBType.AsciiChar:
+                    ((RichTextBox)control).Text = value != null ? value.ToString() : "";
                     break;
 
-                case StaticDB.DBType.String:
+                case DBType.String:
                     string ret = "";
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
+                        if (value != null && ((string)value).Length > 0)
                         {
-                            ret = MakeUtf8ControlCharactersReadable(Encoding.UTF8.GetString(data));
+                            ret = MakeUtf8ControlCharactersReadable((string)value);
                         }
                     }
-                    ((TextBox)control).Text = ret;
+                    ((RichTextBox)control).Text = ret;
                     break;
 
-                case StaticDB.DBType.Vector2:
-                    
+                case DBType.Vector2:
+
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        ((DataGridView)control).Rows.Add(((float[])value)[0], ((float[])value)[1]);
+                        ((DataGridView)control).Rows.Add(((Vector2)value).x, ((Vector2)value).y);
                     }
                     break;
 
-                case StaticDB.DBType.Vector3:
+                case DBType.Vector3:
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        ((DataGridView)control).Rows.Add(((float[])value)[0], ((float[])value)[1], ((float[])value)[2]);
+                        ((DataGridView)control).Rows.Add(((Vector3)value).x, ((Vector3)value).y, ((Vector3)value).z);
                     }
                     break;
 
@@ -1133,7 +1077,7 @@ namespace FauFau.SDBrowser
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        ((DataGridView)control).Rows.Add(((float[])value)[0], ((float[])value)[1], ((float[])value)[2], ((float[])value)[3]);
+                        ((DataGridView)control).Rows.Add(((Vector4)value).x, ((Vector4)value).y, ((Vector4)value).z, ((Vector4)value).w);
                     }
                     break;
 
@@ -1141,102 +1085,72 @@ namespace FauFau.SDBrowser
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        ((DataGridView)control).Rows.Add(((float[][])value)[0][0], ((float[][])value)[0][1], ((float[][])value)[0][2], ((float[][])value)[0][3]);
-                        ((DataGridView)control).Rows.Add(((float[][])value)[1][0], ((float[][])value)[1][1], ((float[][])value)[1][2], ((float[][])value)[1][3]);
-                        ((DataGridView)control).Rows.Add(((float[][])value)[2][0], ((float[][])value)[2][1], ((float[][])value)[2][2], ((float[][])value)[2][3]);
-                        ((DataGridView)control).Rows.Add(((float[][])value)[3][0], ((float[][])value)[3][1], ((float[][])value)[3][2], ((float[][])value)[3][3]);
+                        ((DataGridView)control).Rows.Add(((Matrix4x4)value).x.x, ((Matrix4x4)value).x.y, ((Matrix4x4)value).x.z, ((Matrix4x4)value).x.w);
+                        ((DataGridView)control).Rows.Add(((Matrix4x4)value).y.x, ((Matrix4x4)value).y.y, ((Matrix4x4)value).y.z, ((Matrix4x4)value).y.w);
+                        ((DataGridView)control).Rows.Add(((Matrix4x4)value).z.x, ((Matrix4x4)value).z.y, ((Matrix4x4)value).z.z, ((Matrix4x4)value).z.w);
+                        ((DataGridView)control).Rows.Add(((Matrix4x4)value).w.x, ((Matrix4x4)value).w.y, ((Matrix4x4)value).w.z, ((Matrix4x4)value).w.w);
                     }
                     break;
 
                 case StaticDB.DBType.ByteArray:
                 case StaticDB.DBType.Blob:
-                    
+
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
+
+                        if (value != null && ((List<byte>)value).Count > 0)
                         {
-                            ((HexBox)control).ByteProvider = new DynamicByteProvider(data);
+                            ((HexBox)control).ByteProvider = new DynamicByteProvider((List<byte>)value);
                         }
                         else
                         {
                             ((HexBox)control).ByteProvider = new DynamicByteProvider(new byte[0]);
                         }
-                    }         
+                    }
                     else
                     {
                         ((HexBox)control).ByteProvider = new DynamicByteProvider(new byte[0]);
                     }
                     break;
 
-                case StaticDB.DBType.Vector2Array:
+                case DBType.Vector2Array:
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
+                        foreach (Vector2 entry in (List<Vector2>)value)
                         {
-                            int x = data.Length / 8;
-
-                            for (int i = 0; i < x; i++)
-                            {
-                                int y = i * 8;
-                                ((DataGridView)control).Rows.Add( BitConverter.ToSingle(data, y), BitConverter.ToSingle(data, y + 4) );
-                            }
+                            ((DataGridView)control).Rows.Add(entry.x, entry.y);
                         }
                     }
                     break;
 
-                case StaticDB.DBType.Vector3Array:
+                case DBType.Vector3Array:
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
+                        foreach (Vector3 entry in (List<Vector3>)value)
                         {
-                            int x = data.Length / 12;
-
-                            for (int i = 0; i < x; i++)
-                            {
-                                int y = i * 12;
-                                ((DataGridView)control).Rows.Add(BitConverter.ToSingle(data, y), BitConverter.ToSingle(data, y + 4), BitConverter.ToSingle(data, y + 8));
-                            }
+                            ((DataGridView)control).Rows.Add(entry.x, entry.y, entry.z);
                         }
                     }
                     break;
 
-                case StaticDB.DBType.Vector4Array:
+                case DBType.Vector4Array:
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
+                        foreach (Vector4 entry in (List<Vector4>)value)
                         {
-                            int x = data.Length / 16;
-
-                            for (int i = 0; i < x; i++)
-                            {
-                                int y = i * 16;
-                                ((DataGridView)control).Rows.Add(BitConverter.ToSingle(data, y), BitConverter.ToSingle(data, y + 4), BitConverter.ToSingle(data, y + 8), BitConverter.ToSingle(data, y + 12));
-                            }
+                            ((DataGridView)control).Rows.Add(entry.x, entry.y, entry.z, entry.w);
                         }
                     }
                     break;
 
-                case StaticDB.DBType.UShortArray:
+                case DBType.UShortArray:
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
-                        {
-                            int x = data.Length / 2;
-
-                            for (int i = 0; i < x; i++)
-                            {
-                                ((DataGridView)control).Rows.Add(BitConverter.ToUInt16(data, i * 2).ToString());
-                            }
-                        }
+                        ((DataGridView)control).Rows.Add((List<ushort>)value);
                     }
                     break;
 
@@ -1244,16 +1158,7 @@ namespace FauFau.SDBrowser
                     ((DataGridView)control).Rows.Clear();
                     if (value != null)
                     {
-                        byte[] data = sdb.body.GetDataEntry((uint)value, true);
-                        if (data != null && data.Length > 0)
-                        {
-                            int x = data.Length / 4;
-
-                            for (int i = 0; i < x; i++)
-                            {
-                                ((DataGridView)control).Rows.Add(BitConverter.ToUInt32(data, i * 4).ToString());
-                            }
-                        }
+                        ((DataGridView)control).Rows.Add((List<uint>)value);
                     }
                     break;
 
@@ -1263,21 +1168,21 @@ namespace FauFau.SDBrowser
                     break;
 
             }
-            */
+
         }
 
         private HexBox CreateInspectorHexBox()
         {
             HexBox hb = new HexBox();
             hb.Width = 418;
-            hb.BackColor = Color.DarkGray;
+            hb.BackColor = Color.FromArgb(55, 58, 60);
             hb.BytesPerLine = 16;
             hb.Height = 200;
             hb.VScrollBarVisible = true;
             return hb;
         }
 
-        private TextBox CreateInspectorLabel(string label = "")
+        private RichTextBox CreateInspectorLabel(string label = "")
         {
             /*Label l = new Label();
             l.AutoSize = true;
@@ -1285,19 +1190,20 @@ namespace FauFau.SDBrowser
             l.Margin = new Padding(0, 4, 0, 0);
             l.Text = label;*/
 
-            TextBox l = new MouseTransparentTextBox();
+            RichTextBox l = new MouseTransparentTextBox();
             l.Width = flpInspect.Width - 24;
             l.WordWrap = true;
             l.Multiline = true;
             l.TextChanged += L_TextChanged;
-            l.BackColor = Color.DarkGray;
+            l.BackColor = Color.FromArgb(55, 58, 60);
+            l.ForeColor = Color.FromArgb(200, 200, 200);
             l.BorderStyle = BorderStyle.None;
-                return l;
+            return l;
         }
 
         private void L_TextChanged(object sender, EventArgs e)
         {
-            TextBox tb = sender as TextBox;
+            RichTextBox tb = sender as RichTextBox;
 
             const int padding = 3;
             // get number of lines (first line is 0, so add 1)
@@ -1307,6 +1213,39 @@ namespace FauFau.SDBrowser
             // set height (height of one line * number of lines + spacing)
             tb.Height = tb.Font.Height * numLines + padding + border;
 
+            SimpleHighlight(tb);
+
+
+        }
+
+        private void SimpleHighlight(RichTextBox rtb)
+        {
+            rtb.SelectionStart = 0;
+            rtb.SelectionLength = rtb.Text.Length;
+            rtb.SelectionColor = Color.FromArgb(200, 200, 200);
+
+            string regex = @"(UTF8)(\[)((([0-9A-Fa-f]{2}(?=\s|\]))|\s)+)(\])";
+            MatchCollection matches = Regex.Matches(rtb.Text, regex);
+
+            foreach (Match m in matches)
+            {
+                rtb.SelectionStart = m.Groups[1].Index;
+                rtb.SelectionLength = m.Groups[1].Length;
+                rtb.SelectionColor = Color.DarkRed;
+
+                rtb.SelectionStart = m.Groups[2].Index;
+                rtb.SelectionLength = m.Groups[2].Length;
+                rtb.SelectionColor = Color.DarkRed;
+
+                rtb.SelectionStart = m.Groups[3].Index;
+                rtb.SelectionLength = m.Groups[3].Length;
+                rtb.SelectionColor = Color.White;
+
+                rtb.SelectionStart = m.Groups[6].Index;
+                rtb.SelectionLength = m.Groups[6].Length;
+                rtb.SelectionColor = Color.DarkRed;
+
+            }
         }
 
 
@@ -1318,21 +1257,43 @@ namespace FauFau.SDBrowser
         {
             DataGridView dgv = new DataGridView();
             dgv.Width = flpInspect.Width - 26;
-            dgv.ColumnCount = columns; 
+            dgv.ColumnCount = columns;
             dgv.RowHeadersVisible = false;
             dgv.AllowUserToAddRows = false;
-            dgv.DefaultCellStyle.BackColor = Color.DarkGray;
-            dgv.GridColor = Color.Gray;
-            dgv.BorderStyle = BorderStyle.None;
+            dgv.AlternatingRowsDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(58)))), ((int)(((byte)(60)))));
+            dgv.AlternatingRowsDefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            dgv.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
+            dgv.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            dgv.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
+            dgv.ColumnHeadersDefaultCellStyle.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dgv.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dgv.ColumnHeadersDefaultCellStyle.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            dgv.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgv.DefaultCellStyle.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dgv.DefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
+            dgv.DefaultCellStyle.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dgv.DefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
+            dgv.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.Gray;
+            dgv.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            dgv.DefaultCellStyle.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            dgv.EnableHeadersVisualStyles = false;
+            dgv.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
+            dgv.Location = new System.Drawing.Point(0, 0);
+            dgv.MultiSelect = false;
+            dgv.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
 
-            if(headers != null)
+            //dgv.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+
+
+            if (headers != null)
             {
-                dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.DarkGray;
+                dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(55, 58, 60);
+                dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(224, 224, 224);
 
                 dgv.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
                 dgv.EnableHeadersVisualStyles = false;
                 int x = 0;
-                foreach(string header in headers)
+                foreach (string header in headers)
                 {
                     dgv.Columns[x].HeaderText = header;
                     x++;
@@ -1342,9 +1303,9 @@ namespace FauFau.SDBrowser
             {
                 dgv.ColumnHeadersVisible = false;
             }
-            for(int i = 0; i < columns; i++)
+            for (int i = 0; i < columns; i++)
             {
-                dgv.Columns[i].Width = (dgv.Width-21) / columns;
+                dgv.Columns[i].Width = (dgv.Width - 21) / columns;
             }
 
             return dgv;
@@ -1357,40 +1318,46 @@ namespace FauFau.SDBrowser
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (lvTables.SelectedItems.Count > 0)
+            if (lbTables.SelectedItems.Count > 0)
             {
-                DoSearch(lvTables.SelectedItems[0].Index);
+                DoSearch(lbTables.SelectedIndex);
             }
         }
 
         private void lbSearchResults_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (lbSearchResults.SelectedItem == null)
+            {
+                return;
+            }
             string[] go = ((string)lbSearchResults.SelectedItem).Split(new string[] { ":" }, StringSplitOptions.None);
 
-            if(go.Length == 3)
+            if (go.Length == 3)
             {
 
                 int table = int.Parse(go[0]);
                 int row = int.Parse(go[1]);
                 int field = int.Parse(go[2]);
 
-                if(lvTables.Items.Count >= table)
+                if (lbTables.Items.Count >= table)
                 {
-                    if(lvTables.SelectedIndices.Count == 0 || lvTables.SelectedIndices[0] != table)
+                    if (lbTables.SelectedIndices.Count == 0 || lbTables.SelectedIndices[0] != table)
                     {
-                        gotoRow = row;
-                        gotoField = field;
-                        lvTables.Items[table].Selected = true;
-                        lvTables.EnsureVisible(table);
+                        lbTables.SelectedIndex = table;
+                        CurrentRow = row;
+                        CurrentColumn = field;
+                        dgvRows.Rows[row].Selected = true;
                     }
-                    else if (lvTables.SelectedIndices.Count != 0 || lvTables.SelectedIndices[0] == table)
+                    else if (lbTables.SelectedIndices.Count != 0 || lbTables.SelectedIndices[0] == table)
                     {
-                        
+
                         if (dgvRows.Rows.Count >= row)
                         {
                             if (dgvRows.Columns.Count >= field)
                             {
-                                dgvRows.CurrentCell = dgvRows.Rows[row].Cells[field];
+                                CurrentRow = row;
+                                CurrentColumn = field;
+                                dgvRows.Rows[row].Selected = true;
                             }
                         }
                     }
@@ -1400,63 +1367,16 @@ namespace FauFau.SDBrowser
 
         private void dgvRows_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if(e.ColumnIndex > -1 && e.RowIndex > -1)
+            if (e.ColumnIndex > -1 && e.RowIndex > -1)
             {
+                Clipboard.SetText((string)dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].FormattedValue);
 
-                    Clipboard.SetText((string)dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].FormattedValue);
-                           
-            }        
-        }
-
-        private void dgvRows_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
-        {
-            if (e.ColumnIndex > -1)
-            {
-                if (e.RowIndex == -1)
-                {
-                    string s = (string)dgvRows.Columns[e.ColumnIndex].HeaderText.Split(' ')[0];
-                    Clipboard.SetText(s);
-                    rtbOutput.Clear();
-
-                    bool b = false;
-
-                    foreach (List<string> d in dupes.Values)
-                    {
-
-                        foreach (string dd in d)
-                        {
-                            if (b) break;
-                            if (dd.Equals(s))
-                            {
-                                if (d.Count > 0)
-                                {
-                                    rtbOutput.Text += "RESULTS:\n";
-                                    foreach (string ss in d)
-                                    {
-                                        rtbOutput.Text += ss + "\n";
-                                    }
-                                }
-                                b = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    
-                    if(!string.IsNullOrEmpty((string)dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].FormattedValue))
-                    {
-                        Clipboard.SetText((string)dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].FormattedValue);
-                    }
-                    
-                }
             }
         }
 
         private void dgvRows_SelectionChanged(object sender, EventArgs e)
         {
-            if(dgvRows.SelectedRows.Count > 0 && dgvRows.SelectedRows[0].Index != previousRow)
+            if (dgvRows.SelectedRows.Count > 0 && dgvRows.SelectedRows[0].Index != previousRow)
             {
                 previousRow = dgvRows.SelectedRows[0].Index;
                 InspectRow(previousRow);
@@ -1466,10 +1386,161 @@ namespace FauFau.SDBrowser
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            /*ScrollBar vScrollBar1 = new VScrollBar();
-            vScrollBar1.Dock = DockStyle.Right;
-            vScrollBar1.Scroll += (s, ev) => { pnlScrollInspector.VerticalScroll.Value = vScrollBar1.Value; };
-            pnlScrollInspector.Controls.Add(vScrollBar1);*/
+
+            cbSearchType.SelectedIndex = cbSearchType.Items.IndexOf(DBType.String);
+
+
+            /*
+            StringBuilder sbSecret = new StringBuilder();
+            StringBuilder sbNotSecret = new StringBuilder();
+            StringBuilder sbAll = new StringBuilder();
+            StringBuilder sbInternal = new StringBuilder();
+
+            foreach (Row row in sdb[27])
+            {
+                if (((byte)row[9]) == 1)
+                {
+                    string name = "";
+                    foreach (Row strings in sdb[31])
+                    {
+                        if (((uint)strings[6]) == (uint)row[0])
+                        {
+                            name = (string)strings[4];
+                            break;
+                        }
+                    }
+
+                    string desc = "";
+                    foreach (Row strings in sdb[31])
+                    {
+                        if (((uint)strings[6]) == (uint)row[6])
+                        {
+                            desc = (string)strings[4];
+                            break;
+                        }
+                    }
+
+                    uint id = (uint)row[7];
+
+                    List<string[]> steps = new List<string[]>();
+                    foreach (Row step in sdb[48])
+                    {
+                        if (((uint)step[1]) == id)
+                        {
+                            steps.Add(new string[] { (string)step[2], (string)step[3] });
+                        }
+                    }
+
+                    bool secret = (byte)row[10] == 1;
+
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.Append("ID: ");
+                    sb.Append(id);
+                    sb.Append("\nSECRET: ");
+                    sb.Append(secret);
+                    sb.Append("\nNAME: ");
+                    sb.AppendLine(name.Replace("\0", string.Empty));
+                    sb.Append("DESCRIPTION: ");
+                    sb.AppendLine(desc.Replace("\0", string.Empty));
+
+                    if (steps.Count() > 0)
+                    {
+                        sb.AppendLine("INFO: ");
+
+                        int i = 0;
+                        foreach (string[] step in steps)
+                        {
+                            sb.AppendLine(i + ": " + step[1].Replace("\0", string.Empty) + "   -   " + step[0].Replace("\0", string.Empty));
+                            i++;
+                        }
+                    }
+
+                    sb.AppendLine("\n==========================\n");
+                    sbInternal.Append(sb);
+                }
+            }
+
+            foreach (Row row in sdb[7])
+            {
+                if (((byte)row[9]) == 1)
+                {
+                    string name = "";
+                    foreach (Row strings in sdb[31])
+                    {
+                        if (((uint)strings[6]) == (uint)row[0])
+                        {
+                            name = (string)strings[4];
+                            break;
+                        }
+                    }
+
+                    string desc = "";
+                    foreach (Row strings in sdb[31])
+                    {
+                        if (((uint)strings[6]) == (uint)row[6])
+                        {
+                            desc = (string)strings[4];
+                            break;
+                        }
+                    }
+
+                    uint id = (uint)row[7];
+
+                    List<string[]> steps = new List<string[]>();
+                    foreach (Row step in sdb[48])
+                    {
+                        if (((uint)step[1]) == id)
+                        {
+                            steps.Add(new string[] { (string)step[2], (string)step[3] });
+                        }
+                    }
+
+                    bool secret = (byte)row[10] == 1;
+
+                    StringBuilder sb = new StringBuilder();
+
+                    sb.Append("ID: ");
+                    sb.Append(id);
+                    sb.Append("\nSECRET: ");
+                    sb.Append(secret);
+                    sb.Append("\nNAME: ");
+                    sb.AppendLine(name.Replace("\0", string.Empty));
+                    sb.Append("DESCRIPTION: ");
+                    sb.AppendLine(desc.Replace("\0", string.Empty));
+
+                    if (steps.Count() > 0)
+                    {
+                        sb.AppendLine("INFO: ");
+
+                        int i = 0;
+                        foreach (string[] step in steps)
+                        {
+                            sb.AppendLine(i + ": " + step[1].Replace("\0", string.Empty) + "   -   " + step[0].Replace("\0", string.Empty));
+                            i++;
+                        }
+                    }
+
+                    sb.AppendLine("\n==========================\n");
+
+                    if (secret)
+                    {
+                        sbSecret.Append(sb);
+                    }
+                    else
+                    {
+                        sbNotSecret.Append(sb);
+                    }
+                    sbAll.Append(sb);
+
+                }
+            }
+
+            File.WriteAllText("achievements.txt", sbAll.ToString());
+            File.WriteAllText("achievements.secret.txt", sbSecret.ToString());
+            File.WriteAllText("achievements.notsecret.txt", sbNotSecret.ToString());
+            File.WriteAllText("achievements.internal.txt", sbInternal.ToString());
+            */
         }
 
         private void btnDecrypt_Click(object sender, EventArgs e)
@@ -1567,12 +1638,12 @@ namespace FauFau.SDBrowser
                 {
                     if (!ctrl)
                     {
-                        if(build.Length > 0 )
+                        if (build.Length > 0)
                         {
                             ret.Add(new Tuple<bool, string>(false, build.ToString()));
-                        }                     
+                        }
                         build = new StringBuilder();
-                        build.Append("[ ");
+                        build.Append("UTF8[ ");
                         ctrl = true;
                     }
 
@@ -1580,7 +1651,7 @@ namespace FauFau.SDBrowser
                 }
                 else
                 {
-                    if(ctrl)
+                    if (ctrl)
                     {
                         build.Append(" ]");
                         ret.Add(new Tuple<bool, string>(true, build.ToString()));
@@ -1591,7 +1662,7 @@ namespace FauFau.SDBrowser
                 }
             }
 
-            if(ctrl)
+            if (ctrl)
             {
                 build.Append(" ]");
             }
@@ -1606,7 +1677,7 @@ namespace FauFau.SDBrowser
         private string MakeUtf8ControlCharactersReadable(string input)
         {
             StringBuilder sb = new StringBuilder();
-            foreach(Tuple<bool, string> pair in SplitControlAndNormalUtf8Characters(input))
+            foreach (Tuple<bool, string> pair in SplitControlAndNormalUtf8Characters(input))
             {
                 sb.Append(pair.Item2);
             }
@@ -1627,22 +1698,13 @@ namespace FauFau.SDBrowser
 
         private void lvTables_VisibleChanged(object sender, EventArgs e)
         {
-            
+
         }
 
 
         private void Form1_ClientSizeChanged(object sender, EventArgs e)
         {
-            int c = CurrentRow;
-            currentRow = 0;
-            CurrentRow = c;
-            dgvRowsVScroll.Value = c;
-            if (openTable != -1)
-            {
-                lvTables.TopItem = lvTables.Items[openTable];
-                lvTablesVScroll.Value = lvTables.TopItem.Index;
-            }
-            FixScrollWidth(dgvRows, dgvRowsHScroll);
+
 
         }
 
@@ -1653,7 +1715,7 @@ namespace FauFau.SDBrowser
             foreach (DataGridViewColumn col in dgvRows.Columns)
             {
                 width += col.Width + col.DividerWidth;
-                if(width > dgvRows.Width)
+                if (width > dgvRows.Width)
                 {
                     break;
                 }
@@ -1661,14 +1723,132 @@ namespace FauFau.SDBrowser
             }
 
             dgvRowsHScroll.Maximum = x;
-            
+
         }
 
+        private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
+        {
+
+        }
+
+        private void dgvRows_CellContextMenuStripNeeded(object sender, DataGridViewCellContextMenuStripNeededEventArgs e)
+        {
+            if (e.RowIndex >= 0 && e.RowIndex < sdb[openTable].Count() && e.ColumnIndex >= 0 && e.ColumnIndex < sdb[openTable].Columns.Count())
+            {
+                contextColumn = e.ColumnIndex;
+                contextRow = e.RowIndex;
+
+                // clear menu
+                for (int i = 0; i < contextMenuStrip1.Items.Count; i++)
+                {
+                    contextMenuStrip1.Items[i].Available = false;
+                }
+
+                // !empty cells
+                if (sdb[openTable][e.RowIndex][e.ColumnIndex] != null)
+                {
+                    if (searchableTypes.Contains(sdb[openTable].Columns[e.ColumnIndex].Type))
+                    {
+                        contextMenuStrip1.Items[0].Available = true;
+                    }
+
+                    contextMenuStrip1.Items[1].Available = true;
+
+                    if (rawCopyableTypes.Contains(sdb[openTable].Columns[e.ColumnIndex].Type))
+                    {
+                        contextMenuStrip1.Items[2].Available = true;
+                    }
+                }
+
+
+
+                e.ContextMenuStrip = contextMenuStrip1;
+            }
+
+        }
+
+        private void dgvRows_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+
+        }
+
+        private void searchForThisToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            tbSearchInput.Text = sdb[openTable][contextRow][contextColumn].ToString();
+
+            cbSearchType.SelectedIndex = cbSearchType.Items.IndexOf(sdb[openTable].Columns[contextColumn].Type);
+            Search(sdb[openTable][contextRow][contextColumn], sdb[openTable].Columns[contextColumn].Type);
+        }
+
+        private SolidBrush reportsForegroundBrushSelected = new SolidBrush(Color.White);
+        private SolidBrush reportsForegroundBrush = new SolidBrush(Color.FromArgb(200,200,200));
+        private SolidBrush reportsBackgroundBrushSelected = new SolidBrush(Color.FromKnownColor(KnownColor.Gray));
+        private SolidBrush reportsBackgroundBrush2 = new SolidBrush(Color.FromArgb(60, 63, 65));
+        private SolidBrush reportsBackgroundBrush1 = new SolidBrush(Color.FromArgb(55, 58, 60));
+
+        private void lbSearchResults_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            e.DrawBackground();
+            bool selected = ((e.State & DrawItemState.Selected) == DrawItemState.Selected);
+
+            int index = e.Index;
+            if (index >= 0 && index < lbSearchResults.Items.Count)
+            {
+                string text = lbSearchResults.Items[index].ToString();
+                Graphics g = e.Graphics;
+
+                //background:
+                SolidBrush backgroundBrush;
+                if (selected)
+                    backgroundBrush = reportsBackgroundBrushSelected;
+                else if ((index % 2) == 0)
+                    backgroundBrush = reportsBackgroundBrush1;
+                else
+                    backgroundBrush = reportsBackgroundBrush2;
+                g.FillRectangle(backgroundBrush, e.Bounds);
+
+                //text:
+                SolidBrush foregroundBrush = (selected) ? reportsForegroundBrushSelected : reportsForegroundBrush;
+                g.DrawString(text, e.Font, foregroundBrush, lbSearchResults.GetItemRectangle(index).Location);
+            }
+
+            e.DrawFocusRectangle();
+
+        }
+
+        private void lbTables_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            e.DrawBackground();
+            bool selected = ((e.State & DrawItemState.Selected) == DrawItemState.Selected);
+
+            int index = e.Index;
+            if (index >= 0 && index < lbTables.Items.Count)
+            {
+                string text = lbTables.Items[index].ToString();
+                Graphics g = e.Graphics;
+
+                //background:
+                SolidBrush backgroundBrush;
+                if (selected)
+                    backgroundBrush = reportsBackgroundBrushSelected;
+                else if ((index % 2) == 0)
+                    backgroundBrush = reportsBackgroundBrush1;
+                else
+                    backgroundBrush = reportsBackgroundBrush2;
+                g.FillRectangle(backgroundBrush, e.Bounds);
+
+                //text:
+                SolidBrush foregroundBrush = (selected) ? reportsForegroundBrushSelected : reportsForegroundBrush;
+                g.DrawString(text, e.Font, foregroundBrush, lbTables.GetItemRectangle(index).Location);
+            }
+
+            e.DrawFocusRectangle();
+        }
     }
 
 
 
-    class MouseTransparentTextBox : TextBox
+    class MouseTransparentTextBox : RichTextBox
     {
         protected override void WndProc(ref Message m)
         {
@@ -1676,8 +1856,8 @@ namespace FauFau.SDBrowser
             {
                 case 0x020A: // WM_MOUSEWHEEL
                 case 0x020E: // WM_MOUSEHWHEEL
-                    if (this.ScrollBars == ScrollBars.None && this.Parent != null)
-                        m.HWnd = this.Parent.Handle; // forward this to your parent
+                    //if (this.ScrollBars == ScrollBars.None && this.Parent != null)
+                    //    m.HWnd = this.Parent.Handle; // forward this to your parent
                     base.WndProc(ref m);
                     break;
 
