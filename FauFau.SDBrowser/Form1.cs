@@ -16,9 +16,8 @@ using static FauFau.StaticDB;
 using System.Text.RegularExpressions;
 using System.Drawing.Text;
 
-namespace FauFau.SDBrowser
-{
-    public partial class Form1 : Form
+namespace FauFau.SDBrowser {
+	public partial class Form1 : Form
     {
 
 
@@ -1844,42 +1843,5 @@ namespace FauFau.SDBrowser
 
             e.DrawFocusRectangle();
         }
-    }
-
-
-
-    class MouseTransparentTextBox : RichTextBox
-    {
-        protected override void WndProc(ref Message m)
-        {
-            switch (m.Msg)
-            {
-                case 0x020A: // WM_MOUSEWHEEL
-                case 0x020E: // WM_MOUSEHWHEEL
-                    //if (this.ScrollBars == ScrollBars.None && this.Parent != null)
-                    //    m.HWnd = this.Parent.Handle; // forward this to your parent
-                    base.WndProc(ref m);
-                    break;
-
-                default:
-                    base.WndProc(ref m);
-                    break;
-            }
-        }
-    }
-
-    public class VerticalFlowPanel : FlowLayoutPanel
-    {
-        /*
-        protected override CreateParams CreateParams
-        {
-            get
-            {
-                var cp = base.CreateParams;
-                //cp.Style |= 0x00200000; // WS_VSCROLL
-                return cp;
-            }
-        }
-        */
     }
 }
