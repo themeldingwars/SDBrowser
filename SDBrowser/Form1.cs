@@ -9,12 +9,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using Be.Windows.Forms;
-using FauFau.CommmonDataTypes;
-using static FauFau.StaticDB;
-
-
+using FauFau.Formats;
+using FauFau.Util.CommmonDataTypes;
+using static FauFau.Formats.StaticDB;
 using System.Text.RegularExpressions;
 using System.Drawing.Text;
+
 
 namespace FauFau.SDBrowser {
 	public partial class Form1 : Form

@@ -1,4 +1,4 @@
-﻿using FauFau.CommmonDataTypes;
+﻿using FauFau.Util.CommmonDataTypes;
 using System;
 using System.Collections.Generic;
 using System.Text;

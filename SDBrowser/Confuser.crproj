@@ -1,5 +1,2 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<project baseDir="bin\Release" outputDir="confused" xmlns="http://confuser.codeplex.com">
-  <rule pattern="true" preset="aggressive" />
-  <module path="FauFau.SDBrowser.exe" />
-</project>
+<project xmlns="http://confuser.codeplex.com" />
