@@ -215,12 +215,21 @@ namespace FauFau.SDBrowser {
                 lblCreated.Text = "Created: " + sdb.Timestamp.ToString() + " UTC";
                 lblLoaded.Text = filePath;
 
-
+                int x = 0;
+                int y = 0;
                 for (int i = 0; i < sdb.Count(); i++)
                 {
+                    string hex = GetIdAsHex(sdb[i].Id);
+                    if(!hex.Equals(GetTableOrFieldName(sdb[i].Id)))
+                    {
+                        x++;
+                    }
+                    y++;
+
                     lbTables.Items.Add(i.ToString().PadRight(5) + GetTableOrFieldName(sdb[i].Id));
                 }
 
+                Console.WriteLine(x + " / " + y);
 
             }
         }
@@ -1545,7 +1554,6 @@ namespace FauFau.SDBrowser {
         private void btnDecrypt_Click(object sender, EventArgs e)
         {
 
-            /*
             uint key;
             if(uint.TryParse(tbxDecrypt.Text, out key))
             {
@@ -1555,8 +1563,7 @@ namespace FauFau.SDBrowser {
 
                 try
                 {
-                    byte[] data = sdb.body.GetDataEntry(key, false);
-                    byte[] data_ = sdb.body.GetDataEntry(key, true);
+                    byte[] data = sdb.GetDataEntry(key);
 
                     if (data != null)
                     {
@@ -1565,7 +1572,7 @@ namespace FauFau.SDBrowser {
                         if (data.Length > 0)
                         {
                             rtbOutput.AppendText("Data length: "+data.Length+"\nUTF-8 Decoded:\n\n");
-                            rtbOutput.AppendText(Encoding.UTF8.GetString(data_) + "\n\n");
+                            rtbOutput.AppendText(MakeUtf8ControlCharactersReadable(Encoding.UTF8.GetString(data)) + "\n\n");
                             rtbOutput.AppendText("Raw Bytes:\n\n");
                             rtbOutput.AppendText(ByteArrayToString(data) + "\n\n");
 
@@ -1583,8 +1590,7 @@ namespace FauFau.SDBrowser {
 
                 try
                 {
-                    byte[] data2 = sdb.body.GetDataEntry(key2, false);
-                    byte[] data2_ = sdb.body.GetDataEntry(key2, true);
+                    byte[] data2 = sdb.GetDataEntry(key);
                     if (data2 != null)
                     {
                         match = true;
@@ -1592,7 +1598,7 @@ namespace FauFau.SDBrowser {
                         if (data2.Length > 0)
                         {
                             rtbOutput.AppendText("Data length: " + data2.Length + "\nUTF-8 Decoded:\n\n");
-                            rtbOutput.AppendText(Encoding.UTF8.GetString(data2_) + "\n\n");
+                            rtbOutput.AppendText(MakeUtf8ControlCharactersReadable(Encoding.UTF8.GetString(data2)) + "\n\n");
                             rtbOutput.AppendText("Raw Bytes:\n\n");
                             rtbOutput.AppendText(ByteArrayToString(data2) + "\n\n");
                         }
@@ -1617,7 +1623,7 @@ namespace FauFau.SDBrowser {
                 tbxDecrypt.Text = "Invalid input";
             }
 
-            */
+            
         }
 
 

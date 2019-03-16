@@ -1,11 +1,5 @@
-FauFau/[Bb]in/
-FauFau/[Oo]bj/
-FauFau.Test/[Bb]in/
-FauFau.Test/[Oo]bj/
-FauFau.SDBrowser/[Bb]in/
-FauFau.SDBrowser/[Oo]bj/
-FauFau.Repo/[Bb]in/
-FauFau.Repo/[Oo]bj/
+SDBrowser/[Bb]in/
+SDBrowser/[Oo]bj/
 packages/
 .vs/
 *.suo
