@@ -1834,3 +1834,16 @@ weapondamagetype
 visualgroup
 GroupId
 vertices
+less_than
+color5_highlight
+color6_highlight
+color7_highlight
+color1_shadow
+color2_shadow
+color3_shadow
+color4_shadow
+color5_shadow
+color6_shadow
+color7_shadow
+tagtype_id
+warpaint_palette_id
