@@ -1847,3 +1847,4 @@ color6_shadow
 color7_shadow
 tagtype_id
 warpaint_palette_id
+period_ability_id
