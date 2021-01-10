@@ -28,6 +28,7 @@ namespace FauFau.SDBrowser {
         public List<string> usedStrings = new List<string>();
         public List<string> clearedStrings = new List<string>();
         public Dictionary<uint, List<string>> dupes = new Dictionary<uint, List<string>>();
+        private List<string> TableNames = new List<string>();
 
         private Tuple<string, StaticDB.DBType>[] fields;
         private int realScroll = 0;
@@ -119,6 +120,13 @@ namespace FauFau.SDBrowser {
         }
 
 
+        public int GetSelectedTableIdx()
+        {
+            var name = lbTables.Items[lbTables.SelectedIndices[0]] as string;
+            var idx  = TableNames.IndexOf(name);
+            return idx;
+        }
+        
 
         public Form1()
         {
@@ -136,9 +144,8 @@ namespace FauFau.SDBrowser {
 
             lbTables.SelectedIndexChanged += (s, e) =>
             {
-                if (lbTables.SelectedIndices.Count > 0)
-                {
-                    OpenTable(lbTables.SelectedIndices[0]);
+                if (lbTables.SelectedIndices.Count > 0) {
+                    OpenTable(GetSelectedTableIdx());
                 }
             };
 
@@ -204,6 +211,7 @@ namespace FauFau.SDBrowser {
                 lbTables.Items.Clear();
                 dgvRows.Rows.Clear();
                 dgvRows.Columns.Clear();
+                TableNames.Clear();
                 ClearInspector();
 
                 // load the new db
@@ -226,7 +234,9 @@ namespace FauFau.SDBrowser {
                     }
                     y++;
 
-                    lbTables.Items.Add(i.ToString().PadRight(5) + GetTableOrFieldName(sdb[i].Id));
+                    var name = i.ToString().PadRight(8) + GetTableOrFieldName(sdb[i].Id);
+                    TableNames.Add(name);
+                    lbTables.Items.Add(name);
                 }
 
                 Console.WriteLine(x + " / " + y);
@@ -890,9 +900,9 @@ namespace FauFau.SDBrowser {
                 flpInspect.SuspendLayout();
 
 
-                if (lbTables.SelectedIndices[0] != currentInspector)
+                if (GetSelectedTableIdx() != currentInspector)
                 {
-                    currentInspector = lbTables.SelectedIndices[0];
+                    currentInspector = GetSelectedTableIdx();
                     //Tuple<string, StaticDB.DBType>[] fields = sdb.body.GetFields(currentInspector);
                     inspectorControls = new Control[sdb[currentInspector].Columns.Count()];
 
@@ -1349,14 +1359,14 @@ namespace FauFau.SDBrowser {
 
                 if (lbTables.Items.Count >= table)
                 {
-                    if (lbTables.SelectedIndices.Count == 0 || lbTables.SelectedIndices[0] != table)
+                    if (lbTables.SelectedIndices.Count == 0 || GetSelectedTableIdx() != table)
                     {
                         lbTables.SelectedIndex = table;
                         CurrentRow = row;
                         CurrentColumn = field;
                         dgvRows.Rows[row].Selected = true;
                     }
-                    else if (lbTables.SelectedIndices.Count != 0 || lbTables.SelectedIndices[0] == table)
+                    else if (lbTables.SelectedIndices.Count != 0 || GetSelectedTableIdx() == table)
                     {
 
                         if (dgvRows.Rows.Count >= row)
@@ -1848,6 +1858,18 @@ namespace FauFau.SDBrowser {
             }
 
             e.DrawFocusRectangle();
+        }
+
+        private void tbTableFilter_TextChanged(object sender, EventArgs e)
+        {
+            var filter = tbTableFilter.Text.ToUpper();
+            lbTables.Items.Clear();
+            
+            foreach (var tableName in TableNames) {
+                if (tableName.ToUpper().Contains(filter)) {
+                    lbTables.Items.Add(tableName);
+                }
+            }
         }
     }
 }
