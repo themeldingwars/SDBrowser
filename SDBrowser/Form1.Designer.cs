@@ -47,6 +47,7 @@
 		        this.btnSearchAll                   = new System.Windows.Forms.Button();
 		        this.btnSearchThis                  = new System.Windows.Forms.Button();
 		        this.panel1                         = new System.Windows.Forms.Panel();
+		        this.DB_ImportExport                = new System.Windows.Forms.Button();
 		        this.btnLoad                        = new System.Windows.Forms.Button();
 		        this.pnlLblLoaded                   = new System.Windows.Forms.Panel();
 		        this.pnlHide                        = new System.Windows.Forms.Panel();
@@ -284,6 +285,7 @@
 		        // 
 		        this.panel1.Anchor    = ((System.Windows.Forms.AnchorStyles) (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
 		        this.panel1.BackColor = System.Drawing.Color.FromArgb(((int) (((byte) (60)))), ((int) (((byte) (63)))), ((int) (((byte) (65)))));
+		        this.panel1.Controls.Add(this.DB_ImportExport);
 		        this.panel1.Controls.Add(this.btnLoad);
 		        this.panel1.Controls.Add(this.pnlLblLoaded);
 		        this.panel1.Controls.Add(this.lblFlags);
@@ -294,6 +296,21 @@
 		        this.panel1.Size     = new System.Drawing.Size(296, 91);
 		        this.panel1.TabIndex = 1;
 		        // 
+		        // DB_ImportExport
+		        // 
+		        this.DB_ImportExport.Anchor                    =  ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+		        this.DB_ImportExport.BackColor                 =  System.Drawing.Color.FromArgb(((int) (((byte) (69)))), ((int) (((byte) (73)))), ((int) (((byte) (74)))));
+		        this.DB_ImportExport.FlatAppearance.BorderSize =  0;
+		        this.DB_ImportExport.FlatStyle                 =  System.Windows.Forms.FlatStyle.Flat;
+		        this.DB_ImportExport.ForeColor                 =  System.Drawing.Color.FromArgb(((int) (((byte) (200)))), ((int) (((byte) (200)))), ((int) (((byte) (200)))));
+		        this.DB_ImportExport.Location                  =  new System.Drawing.Point(256, 64);
+		        this.DB_ImportExport.Name                      =  "DB_ImportExport";
+		        this.DB_ImportExport.Size                      =  new System.Drawing.Size(35, 23);
+		        this.DB_ImportExport.TabIndex                  =  8;
+		        this.DB_ImportExport.Text                      =  "DB";
+		        this.DB_ImportExport.UseVisualStyleBackColor   =  false;
+		        this.DB_ImportExport.Click                     += new System.EventHandler(this.DB_ImportExport_Click);
+		        // 
 		        // btnLoad
 		        // 
 		        this.btnLoad.Anchor                    =  ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -301,7 +318,7 @@
 		        this.btnLoad.FlatAppearance.BorderSize =  0;
 		        this.btnLoad.FlatStyle                 =  System.Windows.Forms.FlatStyle.Flat;
 		        this.btnLoad.ForeColor                 =  System.Drawing.Color.FromArgb(((int) (((byte) (200)))), ((int) (((byte) (200)))), ((int) (((byte) (200)))));
-		        this.btnLoad.Location                  =  new System.Drawing.Point(267, 64);
+		        this.btnLoad.Location                  =  new System.Drawing.Point(226, 64);
 		        this.btnLoad.Name                      =  "btnLoad";
 		        this.btnLoad.Size                      =  new System.Drawing.Size(26, 23);
 		        this.btnLoad.TabIndex                  =  3;
@@ -318,13 +335,13 @@
 		        this.pnlLblLoaded.ForeColor = System.Drawing.Color.FromArgb(((int) (((byte) (200)))), ((int) (((byte) (200)))), ((int) (((byte) (200)))));
 		        this.pnlLblLoaded.Location  = new System.Drawing.Point(3, 64);
 		        this.pnlLblLoaded.Name      = "pnlLblLoaded";
-		        this.pnlLblLoaded.Size      = new System.Drawing.Size(262, 23);
+		        this.pnlLblLoaded.Size      = new System.Drawing.Size(217, 23);
 		        this.pnlLblLoaded.TabIndex  = 2;
 		        // 
 		        // pnlHide
 		        // 
 		        this.pnlHide.Anchor   = ((System.Windows.Forms.AnchorStyles) ((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-		        this.pnlHide.Location = new System.Drawing.Point(258, 3);
+		        this.pnlHide.Location = new System.Drawing.Point(213, 3);
 		        this.pnlHide.Name     = "pnlHide";
 		        this.pnlHide.Size     = new System.Drawing.Size(4, 18);
 		        this.pnlHide.TabIndex = 1;
@@ -704,6 +721,8 @@
 		        this.ResumeLayout(false);
 	        }
 
+	        private System.Windows.Forms.Button DB_ImportExport;
+
 	        private System.Windows.Forms.Panel panel2;
 	        private System.Windows.Forms.Panel panel6;
 
@@ -711,46 +730,46 @@
 
         #endregion
 
-        private System.Windows.Forms.SplitContainer splitContainer1;
-        private System.Windows.Forms.SplitContainer splitContainer3;
-        private System.Windows.Forms.Panel pnlInspector;
-        private System.Windows.Forms.Panel pnlLblLoaded;
-        private System.Windows.Forms.Label lblLoaded;
-        private System.Windows.Forms.Label lblPatch;
-        private System.Windows.Forms.Label lblCreated;
-        private System.Windows.Forms.Label lblFlags;
-        private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.SplitContainer splitContainer2;
-        private System.Windows.Forms.Button btnLoad;
-        private System.Windows.Forms.Panel pnlHide;
-        private System.Windows.Forms.Panel pnlLvContainer;
-        private System.Windows.Forms.OpenFileDialog odfSdb;
-        private System.Windows.Forms.SplitContainer splitContainer4;
-        private System.Windows.Forms.Panel panel3;
-        private System.Windows.Forms.Panel panel4;
-        private System.Windows.Forms.Button btnSearchThis;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Button btnSearchAll;
-        private System.Windows.Forms.Panel panel5;
-        private System.Windows.Forms.TextBox tbSearchInput;
-        private System.Windows.Forms.ComboBox cbSearchType;
-        private System.Windows.Forms.Panel panel7;
-        private System.Windows.Forms.Panel panel8;
-        private System.Windows.Forms.Panel panel9;
-        private System.Windows.Forms.ListBox lbSearchResults;
-        private System.Windows.Forms.RichTextBox rtbOutput;
-        private System.Windows.Forms.Button btnDecrypt;
-        private System.Windows.Forms.Panel panel10;
-        private System.Windows.Forms.Panel panel11;
-        private System.Windows.Forms.TextBox tbxDecrypt;
-        private System.Windows.Forms.Button btnGetHash;
-        private System.Windows.Forms.DataGridView dgvRows;
-        private VerticalFlowPanel flpInspect;
-        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.SplitContainer    splitContainer1;
+        private System.Windows.Forms.SplitContainer    splitContainer3;
+        private System.Windows.Forms.Panel             pnlInspector;
+        private System.Windows.Forms.Panel             pnlLblLoaded;
+        private System.Windows.Forms.Label             lblLoaded;
+        private System.Windows.Forms.Label             lblPatch;
+        private System.Windows.Forms.Label             lblCreated;
+        private System.Windows.Forms.Label             lblFlags;
+        private System.Windows.Forms.Panel             panel1;
+        private System.Windows.Forms.SplitContainer    splitContainer2;
+        private System.Windows.Forms.Button            btnLoad;
+        private System.Windows.Forms.Panel             pnlHide;
+        private System.Windows.Forms.Panel             pnlLvContainer;
+        private System.Windows.Forms.OpenFileDialog    odfSdb;
+        private System.Windows.Forms.SplitContainer    splitContainer4;
+        private System.Windows.Forms.Panel             panel3;
+        private System.Windows.Forms.Panel             panel4;
+        private System.Windows.Forms.Button            btnSearchThis;
+        private System.Windows.Forms.TextBox           textBox1;
+        private System.Windows.Forms.Button            btnSearchAll;
+        private System.Windows.Forms.Panel             panel5;
+        private System.Windows.Forms.TextBox           tbSearchInput;
+        private System.Windows.Forms.ComboBox          cbSearchType;
+        private System.Windows.Forms.Panel             panel7;
+        private System.Windows.Forms.Panel             panel8;
+        private System.Windows.Forms.Panel             panel9;
+        private System.Windows.Forms.ListBox           lbSearchResults;
+        private System.Windows.Forms.RichTextBox       rtbOutput;
+        private System.Windows.Forms.Button            btnDecrypt;
+        private System.Windows.Forms.Panel             panel10;
+        private System.Windows.Forms.Panel             panel11;
+        private System.Windows.Forms.TextBox           tbxDecrypt;
+        private System.Windows.Forms.Button            btnGetHash;
+        private System.Windows.Forms.DataGridView      dgvRows;
+        private VerticalFlowPanel                      flpInspect;
+        private System.Windows.Forms.ContextMenuStrip  contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem rawCopyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem searchForThisToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
-        private System.Windows.Forms.ListBox lbTables;
+        private System.Windows.Forms.ListBox           lbTables;
     }
 }
 

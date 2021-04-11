@@ -24,7 +24,7 @@ namespace FauFau.SDBrowser {
         private StaticDB sdb;
         private int openTable = -1;
 
-        public Dictionary<uint, string> stringDb = new Dictionary<uint, string>();
+        public static Dictionary<uint, string> stringDb = new Dictionary<uint, string>();
         public List<string> usedStrings = new List<string>();
         public List<string> clearedStrings = new List<string>();
         public Dictionary<uint, List<string>> dupes = new Dictionary<uint, List<string>>();
@@ -245,12 +245,12 @@ namespace FauFau.SDBrowser {
         }
 
 
-        private string GetIdAsHex(uint id)
+        public static string GetIdAsHex(uint id)
         {
             return "0x" + id.ToString("X4").PadLeft(8, '0');
         }
 
-        private string GetTableOrFieldName(uint id)
+        public static string GetTableOrFieldName(uint id)
         {
             if (stringDb.ContainsKey(id))
             {
@@ -1870,6 +1870,13 @@ namespace FauFau.SDBrowser {
                     lbTables.Items.Add(tableName);
                 }
             }
+        }
+
+        private void DB_ImportExport_Click(object sender, EventArgs e)
+        {
+            var dbWindow = new DBImportExport();
+            dbWindow.Db = sdb;
+            dbWindow.Show();
         }
     }
 }
