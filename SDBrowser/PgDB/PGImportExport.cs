@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -142,8 +143,8 @@ namespace SDBrowser
                 Patch        = DB.Patch,
                 Flags        = DB.Flags,
                 Timestamp    = DB.Timestamp,
-                FileVersion  = DB.fileVersion,
-                TableVersion = DB.tableVersion
+                FileVersion  = (uint)GetInstanceField(DB.GetType(), DB, "fileVersion"),
+                TableVersion = (uint)GetInstanceField(DB.GetType(), DB, "tableVersion")
             };
 
             void AddToMetaTable(string name, MetaType type, string data) => sqls.Add($@"INSERT INTO {Schema}.""Meta"" (name, type, data) VALUES ('{name}', {(int) type}, CAST('{data}' as json));");
@@ -157,6 +158,15 @@ namespace SDBrowser
             }
 
             ExecuteSqls(sqls);
+        }
+        
+        // Remove when we have .net 5 and can update to the new faufau
+        internal static object GetInstanceField(Type type, object instance, string fieldName)
+        {
+            BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+                                   | BindingFlags.Static;
+            FieldInfo field = type.GetField(fieldName, bindFlags);
+            return field.GetValue(instance);
         }
         
         // Creates custom types for the sdb, bind to native numeric types where we can
