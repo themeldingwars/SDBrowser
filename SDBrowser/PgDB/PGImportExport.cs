@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using System.Web;
-using DBTypes;
 using FauFau.Formats;
 using FauFau.SDBrowser;
-using FauFau.Util.CommmonDataTypes;
 using Npgsql;
 using Matrix4x4 = System.Numerics.Matrix4x4;
 using Vector2 = System.Numerics.Vector2;
@@ -51,7 +46,7 @@ namespace SDBrowser
             }
             catch (Exception e) {
                 LogError($"Error Connecting to DB at: {ConnStr}");
-                LogError($"Error: {e.ToString()}");
+                LogError($"Error: {e}");
             }
 
             return null;
@@ -59,7 +54,7 @@ namespace SDBrowser
 
         public void DropExisting()
         {
-            LogMsg("==== Droping existing tables and types. ====");
+            LogMsg("==== Dropping existing tables and types. ====");
             var sqls = new List<string>();
 
             // Tables
@@ -70,7 +65,7 @@ namespace SDBrowser
             sqls.AddRange(new[] {"Box3", "Matrix4x4", "HalfMatrix4x3", "Vector2", "Vector3", "Half3", "Vector4"}.Select(x => $@"DROP TYPE IF EXISTS {Schema}.{x};"));
 
             ExecuteSqls(sqls);
-            LogMsg("==== Tables droped ====");
+            LogMsg("==== Tables dropped ====");
         }
 
         public void CreateSchema()
@@ -265,7 +260,7 @@ namespace SDBrowser
                         for (var index = 0; index < row.Fields.Count; index++) {
                             var field      = row.Fields[index];
                             var fieldType  = table.Columns[index].Type;
-                            var colummName = Form1.GetTableOrFieldName(table.Columns[index].Id);
+                            var columnName = Form1.GetTableOrFieldName(table.Columns[index].Id);
 
                             if (field == null) {
                                 writer.WriteNull();
@@ -290,7 +285,7 @@ namespace SDBrowser
                                 }
                                 else if (field is char fieldChar) {
                                     if (fieldChar == '\0') { // feels abit eh, TODO: check incase of char trouble
-                                        Console.WriteLine($"Got an invalid char {fieldChar} in table {tableName} on colum {colummName} row {i}");
+                                        Console.WriteLine($"Got an invalid char {fieldChar} in table {tableName} on column {columnName} row {i}");
                                         writer.Write(' ');
                                     }
                                     else {
