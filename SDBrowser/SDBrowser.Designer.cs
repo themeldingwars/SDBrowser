@@ -22,12 +22,12 @@
 
         #region Windows Form Designer generated code
 
-	        /// <summary>
-	        /// Required method for Designer support - do not modify
-	        /// the contents of this method with the code editor.
-	        /// </summary>
-	        private void InitializeComponent()
-	        {
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
@@ -66,6 +66,7 @@
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.pnlInspector = new System.Windows.Forms.Panel();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.flpInspect = new FauFau.SDBrowser.VerticalFlowPanel();
             this.panel4 = new System.Windows.Forms.Panel();
             this.btnGetHash = new System.Windows.Forms.Button();
             this.btnDecrypt = new System.Windows.Forms.Button();
@@ -101,6 +102,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.dgvRows)).BeginInit();
             this.pnlInspector.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
+            this.splitContainer4.Panel1.SuspendLayout();
             this.splitContainer4.Panel2.SuspendLayout();
             this.splitContainer4.SuspendLayout();
             this.panel4.SuspendLayout();
@@ -135,8 +137,8 @@
             // 
             // splitContainer2
             // 
-            this.splitContainer2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.splitContainer2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.splitContainer2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(81)))), ((int)(((byte)(81)))), ((int)(((byte)(81)))));
             this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
@@ -163,8 +165,8 @@
             // 
             // panel3
             // 
-            this.panel3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.panel3.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel3.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
             this.panel3.Controls.Add(this.lbSearchResults);
@@ -180,8 +182,8 @@
             // 
             // lbSearchResults
             // 
-            this.lbSearchResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.lbSearchResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lbSearchResults.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
             this.lbSearchResults.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -210,7 +212,7 @@
             // 
             // panel5
             // 
-            this.panel5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.panel5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel5.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.panel5.Controls.Add(this.cbSearchType);
@@ -238,7 +240,7 @@
             // 
             // panel7
             // 
-            this.panel7.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.panel7.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel7.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.panel7.Controls.Add(this.panel8);
@@ -260,7 +262,7 @@
             // 
             // tbSearchInput
             // 
-            this.tbSearchInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.tbSearchInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbSearchInput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.tbSearchInput.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -291,7 +293,7 @@
             // 
             // btnSearchThis
             // 
-            this.btnSearchThis.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.btnSearchThis.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.btnSearchThis.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.btnSearchThis.FlatAppearance.BorderSize = 0;
@@ -309,7 +311,7 @@
             // 
             // panel1
             // 
-            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
             this.panel1.Controls.Add(this.btnJsonExport);
@@ -376,7 +378,7 @@
             // 
             // pnlLblLoaded
             // 
-            this.pnlLblLoaded.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.pnlLblLoaded.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlLblLoaded.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.pnlLblLoaded.Controls.Add(this.pnlHide);
@@ -400,7 +402,7 @@
             // 
             // lblLoaded
             // 
-            this.lblLoaded.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.lblLoaded.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblLoaded.AutoSize = true;
             this.lblLoaded.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
@@ -453,7 +455,7 @@
             // 
             // panel2
             // 
-            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.panel2.Controls.Add(this.panel6);
@@ -475,7 +477,7 @@
             // 
             // tbTableFilter
             // 
-            this.tbTableFilter.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.tbTableFilter.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbTableFilter.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.tbTableFilter.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -490,8 +492,8 @@
             // 
             // lbTables
             // 
-            this.lbTables.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.lbTables.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lbTables.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
             this.lbTables.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -528,7 +530,7 @@
             this.splitContainer3.Panel2.Controls.Add(this.pnlInspector);
             this.splitContainer3.Panel2MinSize = 100;
             this.splitContainer3.Size = new System.Drawing.Size(1127, 740);
-            this.splitContainer3.SplitterDistance = 672;
+            this.splitContainer3.SplitterDistance = 673;
             this.splitContainer3.SplitterWidth = 5;
             this.splitContainer3.TabIndex = 0;
             // 
@@ -566,7 +568,7 @@
             dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvRows.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.dgvRows.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvRows.Size = new System.Drawing.Size(672, 740);
+            this.dgvRows.Size = new System.Drawing.Size(673, 740);
             this.dgvRows.TabIndex = 8;
             this.dgvRows.VirtualMode = true;
             this.dgvRows.CellContextMenuStripNeeded += new System.Windows.Forms.DataGridViewCellContextMenuStripNeededEventHandler(this.dgvRows_CellContextMenuStripNeeded);
@@ -591,7 +593,7 @@
             this.pnlInspector.Location = new System.Drawing.Point(0, 0);
             this.pnlInspector.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pnlInspector.Name = "pnlInspector";
-            this.pnlInspector.Size = new System.Drawing.Size(450, 740);
+            this.pnlInspector.Size = new System.Drawing.Size(449, 740);
             this.pnlInspector.TabIndex = 0;
             // 
             // splitContainer4
@@ -606,14 +608,28 @@
             // splitContainer4.Panel1
             // 
             this.splitContainer4.Panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
+            this.splitContainer4.Panel1.Controls.Add(this.flpInspect);
             // 
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.panel4);
-            this.splitContainer4.Size = new System.Drawing.Size(450, 740);
+            this.splitContainer4.Size = new System.Drawing.Size(449, 740);
             this.splitContainer4.SplitterDistance = 565;
             this.splitContainer4.SplitterWidth = 5;
             this.splitContainer4.TabIndex = 0;
+            // 
+            // flpInspect
+            // 
+            this.flpInspect.AutoScroll = true;
+            this.flpInspect.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpInspect.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.flpInspect.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.flpInspect.Location = new System.Drawing.Point(0, 0);
+            this.flpInspect.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.flpInspect.Name = "flpInspect";
+            this.flpInspect.Size = new System.Drawing.Size(449, 565);
+            this.flpInspect.TabIndex = 0;
+            this.flpInspect.WrapContents = false;
             // 
             // panel4
             // 
@@ -626,7 +642,7 @@
             this.panel4.Location = new System.Drawing.Point(0, 0);
             this.panel4.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(450, 170);
+            this.panel4.Size = new System.Drawing.Size(449, 170);
             this.panel4.TabIndex = 0;
             // 
             // btnGetHash
@@ -686,7 +702,7 @@
             // 
             // tbxDecrypt
             // 
-            this.tbxDecrypt.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.tbxDecrypt.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbxDecrypt.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
             this.tbxDecrypt.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -700,8 +716,8 @@
             // 
             // rtbOutput
             // 
-            this.rtbOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.rtbOutput.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.rtbOutput.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
             this.rtbOutput.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -710,7 +726,7 @@
             this.rtbOutput.Location = new System.Drawing.Point(0, 0);
             this.rtbOutput.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.rtbOutput.Name = "rtbOutput";
-            this.rtbOutput.Size = new System.Drawing.Size(450, 142);
+            this.rtbOutput.Size = new System.Drawing.Size(449, 142);
             this.rtbOutput.TabIndex = 8;
             this.rtbOutput.Text = "";
             // 
@@ -750,7 +766,7 @@
             this.rawCopyToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.rawCopyToolStripMenuItem.Text = "Raw copy";
             // 
-            // SDBrowser
+            // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -762,7 +778,6 @@
             this.Location = new System.Drawing.Point(15, 15);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "SDBrowser";
-            this.Text = "SDBrowser";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ClientSizeChanged += new System.EventHandler(this.Form1_ClientSizeChanged);
             this.splitContainer1.Panel1.ResumeLayout(false);
@@ -792,6 +807,7 @@
             this.splitContainer3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvRows)).EndInit();
             this.pnlInspector.ResumeLayout(false);
+            this.splitContainer4.Panel1.ResumeLayout(false);
             this.splitContainer4.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
             this.splitContainer4.ResumeLayout(false);
@@ -801,58 +817,57 @@
             this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
-	        }
+        }
 
-	        private System.Windows.Forms.Button DB_ImportExport;
+        private System.Windows.Forms.Button DB_ImportExport;
 
-            private System.Windows.Forms.Panel panel2;
-	        private System.Windows.Forms.Panel panel6;
+        private System.Windows.Forms.Panel panel2;
+        private System.Windows.Forms.Panel panel6;
 
-	        private System.Windows.Forms.TextBox tbTableFilter;
+        private System.Windows.Forms.TextBox tbTableFilter;
 
         #endregion
 
-        private System.Windows.Forms.SplitContainer    splitContainer1;
-        private System.Windows.Forms.SplitContainer    splitContainer3;
-        private System.Windows.Forms.Panel             pnlInspector;
-        private System.Windows.Forms.Panel             pnlLblLoaded;
-        private System.Windows.Forms.Label             lblLoaded;
-        private System.Windows.Forms.Label             lblPatch;
-        private System.Windows.Forms.Label             lblCreated;
-        private System.Windows.Forms.Label             lblFlags;
-        private System.Windows.Forms.Panel             panel1;
-        private System.Windows.Forms.SplitContainer    splitContainer2;
-        private System.Windows.Forms.Button            btnLoad;
-        private System.Windows.Forms.Panel             pnlHide;
-        private System.Windows.Forms.Panel             pnlLvContainer;
-        private System.Windows.Forms.OpenFileDialog    odfSdb;
-        private System.Windows.Forms.SplitContainer    splitContainer4;
-        private System.Windows.Forms.Panel             panel3;
-        private System.Windows.Forms.Panel             panel4;
-        private System.Windows.Forms.Button            btnSearchThis;
-        private System.Windows.Forms.TextBox           textBox1;
-        private System.Windows.Forms.Button            btnSearchAll;
-        private System.Windows.Forms.Panel             panel5;
-        private System.Windows.Forms.TextBox           tbSearchInput;
-        private System.Windows.Forms.ComboBox          cbSearchType;
-        private System.Windows.Forms.Panel             panel7;
-        private System.Windows.Forms.Panel             panel8;
-        private System.Windows.Forms.Panel             panel9;
-        private System.Windows.Forms.ListBox           lbSearchResults;
-        private System.Windows.Forms.RichTextBox       rtbOutput;
-        private System.Windows.Forms.Button            btnDecrypt;
-        private System.Windows.Forms.Panel             panel10;
-        private System.Windows.Forms.Panel             panel11;
-        private System.Windows.Forms.TextBox           tbxDecrypt;
-        private System.Windows.Forms.Button            btnGetHash;
-        private System.Windows.Forms.DataGridView      dgvRows;
-        private VerticalFlowPanel                      flpInspect;
-        private System.Windows.Forms.ContextMenuStrip  contextMenuStrip1;
+        private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.SplitContainer splitContainer3;
+        private System.Windows.Forms.Panel pnlInspector;
+        private System.Windows.Forms.Panel pnlLblLoaded;
+        private System.Windows.Forms.Label lblLoaded;
+        private System.Windows.Forms.Label lblPatch;
+        private System.Windows.Forms.Label lblCreated;
+        private System.Windows.Forms.Label lblFlags;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.SplitContainer splitContainer2;
+        private System.Windows.Forms.Button btnLoad;
+        private System.Windows.Forms.Panel pnlHide;
+        private System.Windows.Forms.Panel pnlLvContainer;
+        private System.Windows.Forms.OpenFileDialog odfSdb;
+        private System.Windows.Forms.SplitContainer splitContainer4;
+        private System.Windows.Forms.Panel panel3;
+        private System.Windows.Forms.Panel panel4;
+        private System.Windows.Forms.Button btnSearchThis;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Button btnSearchAll;
+        private System.Windows.Forms.Panel panel5;
+        private System.Windows.Forms.TextBox tbSearchInput;
+        private System.Windows.Forms.ComboBox cbSearchType;
+        private System.Windows.Forms.Panel panel7;
+        private System.Windows.Forms.Panel panel8;
+        private System.Windows.Forms.Panel panel9;
+        private System.Windows.Forms.ListBox lbSearchResults;
+        private System.Windows.Forms.RichTextBox rtbOutput;
+        private System.Windows.Forms.Button btnDecrypt;
+        private System.Windows.Forms.Panel panel10;
+        private System.Windows.Forms.Panel panel11;
+        private System.Windows.Forms.TextBox tbxDecrypt;
+        private System.Windows.Forms.Button btnGetHash;
+        private System.Windows.Forms.DataGridView dgvRows;
+        private VerticalFlowPanel flpInspect;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem rawCopyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem searchForThisToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
-        private System.Windows.Forms.ListBox           lbTables;
+        private System.Windows.Forms.ListBox lbTables;
         private System.Windows.Forms.Button btnJsonExport;
     }
 }
-
