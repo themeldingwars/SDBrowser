@@ -14,12 +14,12 @@
     <SelfContained>false</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishReadyToRun>false</PublishReadyToRun>
+    <ApplicationIcon>Resources\SdbIcon.ico</ApplicationIcon>
+    <Win32Resource></Win32Resource>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Be.Windows.Forms.HexBox" Version="1.6.1" />
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
-    <PackageReference Include="MetroFramework" Version="1.2.0.3" />
+    <PackageReference Include="Be.Windows.Forms.HexBox.Net5" Version="1.8.0" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="5.0.10" />
     <PackageReference Include="Npgsql" Version="5.0.10" />
     <PackageReference Include="SharpCompress" Version="0.30.0" />

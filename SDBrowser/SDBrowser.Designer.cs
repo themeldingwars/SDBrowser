@@ -66,7 +66,6 @@
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.pnlInspector = new System.Windows.Forms.Panel();
             this.splitContainer4 = new System.Windows.Forms.SplitContainer();
-            this.flpInspect = new FauFau.SDBrowser.VerticalFlowPanel();
             this.panel4 = new System.Windows.Forms.Panel();
             this.btnGetHash = new System.Windows.Forms.Button();
             this.btnDecrypt = new System.Windows.Forms.Button();
@@ -102,7 +101,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.dgvRows)).BeginInit();
             this.pnlInspector.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
-            this.splitContainer4.Panel1.SuspendLayout();
             this.splitContainer4.Panel2.SuspendLayout();
             this.splitContainer4.SuspendLayout();
             this.panel4.SuspendLayout();
@@ -530,7 +528,7 @@
             this.splitContainer3.Panel2.Controls.Add(this.pnlInspector);
             this.splitContainer3.Panel2MinSize = 100;
             this.splitContainer3.Size = new System.Drawing.Size(1127, 740);
-            this.splitContainer3.SplitterDistance = 673;
+            this.splitContainer3.SplitterDistance = 672;
             this.splitContainer3.SplitterWidth = 5;
             this.splitContainer3.TabIndex = 0;
             // 
@@ -568,7 +566,7 @@
             dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvRows.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.dgvRows.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvRows.Size = new System.Drawing.Size(673, 740);
+            this.dgvRows.Size = new System.Drawing.Size(672, 740);
             this.dgvRows.TabIndex = 8;
             this.dgvRows.VirtualMode = true;
             this.dgvRows.CellContextMenuStripNeeded += new System.Windows.Forms.DataGridViewCellContextMenuStripNeededEventHandler(this.dgvRows_CellContextMenuStripNeeded);
@@ -593,7 +591,7 @@
             this.pnlInspector.Location = new System.Drawing.Point(0, 0);
             this.pnlInspector.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pnlInspector.Name = "pnlInspector";
-            this.pnlInspector.Size = new System.Drawing.Size(449, 740);
+            this.pnlInspector.Size = new System.Drawing.Size(450, 740);
             this.pnlInspector.TabIndex = 0;
             // 
             // splitContainer4
@@ -608,28 +606,14 @@
             // splitContainer4.Panel1
             // 
             this.splitContainer4.Panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
-            this.splitContainer4.Panel1.Controls.Add(this.flpInspect);
             // 
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.panel4);
-            this.splitContainer4.Size = new System.Drawing.Size(449, 740);
+            this.splitContainer4.Size = new System.Drawing.Size(450, 740);
             this.splitContainer4.SplitterDistance = 565;
             this.splitContainer4.SplitterWidth = 5;
             this.splitContainer4.TabIndex = 0;
-            // 
-            // flpInspect
-            // 
-            this.flpInspect.AutoScroll = true;
-            this.flpInspect.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.flpInspect.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flpInspect.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.flpInspect.Location = new System.Drawing.Point(0, 0);
-            this.flpInspect.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.flpInspect.Name = "flpInspect";
-            this.flpInspect.Size = new System.Drawing.Size(449, 565);
-            this.flpInspect.TabIndex = 0;
-            this.flpInspect.WrapContents = false;
             // 
             // panel4
             // 
@@ -642,7 +626,7 @@
             this.panel4.Location = new System.Drawing.Point(0, 0);
             this.panel4.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(449, 170);
+            this.panel4.Size = new System.Drawing.Size(450, 170);
             this.panel4.TabIndex = 0;
             // 
             // btnGetHash
@@ -726,7 +710,7 @@
             this.rtbOutput.Location = new System.Drawing.Point(0, 0);
             this.rtbOutput.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.rtbOutput.Name = "rtbOutput";
-            this.rtbOutput.Size = new System.Drawing.Size(449, 142);
+            this.rtbOutput.Size = new System.Drawing.Size(450, 142);
             this.rtbOutput.TabIndex = 8;
             this.rtbOutput.Text = "";
             // 
@@ -766,7 +750,7 @@
             this.rawCopyToolStripMenuItem.Size = new System.Drawing.Size(149, 22);
             this.rawCopyToolStripMenuItem.Text = "Raw copy";
             // 
-            // Form1
+            // SDBrowser
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -778,6 +762,7 @@
             this.Location = new System.Drawing.Point(15, 15);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "SDBrowser";
+            this.Text = "SDBrowser";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ClientSizeChanged += new System.EventHandler(this.Form1_ClientSizeChanged);
             this.splitContainer1.Panel1.ResumeLayout(false);
@@ -807,7 +792,6 @@
             this.splitContainer3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvRows)).EndInit();
             this.pnlInspector.ResumeLayout(false);
-            this.splitContainer4.Panel1.ResumeLayout(false);
             this.splitContainer4.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
             this.splitContainer4.ResumeLayout(false);
