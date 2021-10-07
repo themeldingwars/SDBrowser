@@ -1,6 +1,6 @@
 ﻿namespace FauFau.SDBrowser
 {
-    partial class Form1
+    partial class SDBrowser
     {
         /// <summary>
         /// Required designer variable.
@@ -33,7 +33,7 @@
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SDBrowser));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.panel3 = new System.Windows.Forms.Panel();
@@ -47,6 +47,7 @@
             this.btnSearchAll = new System.Windows.Forms.Button();
             this.btnSearchThis = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.btnJsonExport = new System.Windows.Forms.Button();
             this.DB_ImportExport = new System.Windows.Forms.Button();
             this.btnLoad = new System.Windows.Forms.Button();
             this.pnlLblLoaded = new System.Windows.Forms.Panel();
@@ -313,6 +314,7 @@
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(63)))), ((int)(((byte)(65)))));
+            this.panel1.Controls.Add(this.btnJsonExport);
             this.panel1.Controls.Add(this.DB_ImportExport);
             this.panel1.Controls.Add(this.btnLoad);
             this.panel1.Controls.Add(this.pnlLblLoaded);
@@ -325,6 +327,21 @@
             this.panel1.Size = new System.Drawing.Size(296, 105);
             this.panel1.TabIndex = 1;
             // 
+            // btnJsonExport
+            // 
+            this.btnJsonExport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnJsonExport.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(69)))), ((int)(((byte)(73)))), ((int)(((byte)(74)))));
+            this.btnJsonExport.FlatAppearance.BorderSize = 0;
+            this.btnJsonExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnJsonExport.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnJsonExport.Location = new System.Drawing.Point(247, 74);
+            this.btnJsonExport.Name = "btnJsonExport";
+            this.btnJsonExport.Size = new System.Drawing.Size(44, 27);
+            this.btnJsonExport.TabIndex = 9;
+            this.btnJsonExport.Text = "JSON";
+            this.btnJsonExport.UseVisualStyleBackColor = false;
+            this.btnJsonExport.Click += new System.EventHandler(this.btnJsonExport_Click);
+            // 
             // DB_ImportExport
             // 
             this.DB_ImportExport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -333,10 +350,10 @@
             this.DB_ImportExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.DB_ImportExport.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.DB_ImportExport.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
-            this.DB_ImportExport.Location = new System.Drawing.Point(250, 74);
+            this.DB_ImportExport.Location = new System.Drawing.Point(211, 74);
             this.DB_ImportExport.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.DB_ImportExport.Name = "DB_ImportExport";
-            this.DB_ImportExport.Size = new System.Drawing.Size(41, 27);
+            this.DB_ImportExport.Size = new System.Drawing.Size(33, 27);
             this.DB_ImportExport.TabIndex = 8;
             this.DB_ImportExport.Text = "DB";
             this.DB_ImportExport.UseVisualStyleBackColor = false;
@@ -350,7 +367,7 @@
             this.btnLoad.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLoad.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnLoad.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
-            this.btnLoad.Location = new System.Drawing.Point(215, 74);
+            this.btnLoad.Location = new System.Drawing.Point(178, 74);
             this.btnLoad.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.btnLoad.Name = "btnLoad";
             this.btnLoad.Size = new System.Drawing.Size(30, 27);
@@ -371,13 +388,13 @@
             this.pnlLblLoaded.Location = new System.Drawing.Point(4, 74);
             this.pnlLblLoaded.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pnlLblLoaded.Name = "pnlLblLoaded";
-            this.pnlLblLoaded.Size = new System.Drawing.Size(204, 27);
+            this.pnlLblLoaded.Size = new System.Drawing.Size(170, 27);
             this.pnlLblLoaded.TabIndex = 2;
             // 
             // pnlHide
             // 
             this.pnlHide.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.pnlHide.Location = new System.Drawing.Point(199, 3);
+            this.pnlHide.Location = new System.Drawing.Point(165, 3);
             this.pnlHide.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pnlHide.Name = "pnlHide";
             this.pnlHide.Size = new System.Drawing.Size(5, 21);
@@ -513,7 +530,7 @@
             this.splitContainer3.Panel2.Controls.Add(this.pnlInspector);
             this.splitContainer3.Panel2MinSize = 100;
             this.splitContainer3.Size = new System.Drawing.Size(1127, 740);
-            this.splitContainer3.SplitterDistance = 676;
+            this.splitContainer3.SplitterDistance = 673;
             this.splitContainer3.SplitterWidth = 5;
             this.splitContainer3.TabIndex = 0;
             // 
@@ -551,7 +568,7 @@
             dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dgvRows.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.dgvRows.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvRows.Size = new System.Drawing.Size(676, 740);
+            this.dgvRows.Size = new System.Drawing.Size(673, 740);
             this.dgvRows.TabIndex = 8;
             this.dgvRows.VirtualMode = true;
             this.dgvRows.CellContextMenuStripNeeded += new System.Windows.Forms.DataGridViewCellContextMenuStripNeededEventHandler(this.dgvRows_CellContextMenuStripNeeded);
@@ -576,7 +593,7 @@
             this.pnlInspector.Location = new System.Drawing.Point(0, 0);
             this.pnlInspector.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.pnlInspector.Name = "pnlInspector";
-            this.pnlInspector.Size = new System.Drawing.Size(446, 740);
+            this.pnlInspector.Size = new System.Drawing.Size(449, 740);
             this.pnlInspector.TabIndex = 0;
             // 
             // splitContainer4
@@ -596,7 +613,7 @@
             // splitContainer4.Panel2
             // 
             this.splitContainer4.Panel2.Controls.Add(this.panel4);
-            this.splitContainer4.Size = new System.Drawing.Size(446, 740);
+            this.splitContainer4.Size = new System.Drawing.Size(449, 740);
             this.splitContainer4.SplitterDistance = 565;
             this.splitContainer4.SplitterWidth = 5;
             this.splitContainer4.TabIndex = 0;
@@ -610,7 +627,7 @@
             this.flpInspect.Location = new System.Drawing.Point(0, 0);
             this.flpInspect.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.flpInspect.Name = "flpInspect";
-            this.flpInspect.Size = new System.Drawing.Size(446, 565);
+            this.flpInspect.Size = new System.Drawing.Size(449, 565);
             this.flpInspect.TabIndex = 0;
             this.flpInspect.WrapContents = false;
             // 
@@ -625,7 +642,7 @@
             this.panel4.Location = new System.Drawing.Point(0, 0);
             this.panel4.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(446, 170);
+            this.panel4.Size = new System.Drawing.Size(449, 170);
             this.panel4.TabIndex = 0;
             // 
             // btnGetHash
@@ -709,7 +726,7 @@
             this.rtbOutput.Location = new System.Drawing.Point(0, 0);
             this.rtbOutput.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.rtbOutput.Name = "rtbOutput";
-            this.rtbOutput.Size = new System.Drawing.Size(446, 142);
+            this.rtbOutput.Size = new System.Drawing.Size(449, 142);
             this.rtbOutput.TabIndex = 8;
             this.rtbOutput.Text = "";
             // 
@@ -760,7 +777,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Location = new System.Drawing.Point(15, 15);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.Name = "Form1";
+            this.Name = "SDBrowser";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ClientSizeChanged += new System.EventHandler(this.Form1_ClientSizeChanged);
             this.splitContainer1.Panel1.ResumeLayout(false);
@@ -804,7 +821,7 @@
 
 	        private System.Windows.Forms.Button DB_ImportExport;
 
-	        private System.Windows.Forms.Panel panel2;
+            private System.Windows.Forms.Panel panel2;
 	        private System.Windows.Forms.Panel panel6;
 
 	        private System.Windows.Forms.TextBox tbTableFilter;
@@ -851,6 +868,7 @@
         private System.Windows.Forms.ToolStripMenuItem searchForThisToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
         private System.Windows.Forms.ListBox           lbTables;
+        private System.Windows.Forms.Button btnJsonExport;
     }
 }
 

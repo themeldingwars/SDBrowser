@@ -58,7 +58,7 @@ namespace SDBrowser
             var sqls = new List<string>();
 
             // Tables
-            sqls.AddRange(DB.Tables.Select(x => $"DROP TABLE IF EXISTS {Schema}.\"{Form1.GetTableOrFieldName(x.Id)}\"; "));
+            sqls.AddRange(DB.Tables.Select(x => $"DROP TABLE IF EXISTS {Schema}.\"{FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(x.Id)}\"; "));
             sqls.Add($"DROP TABLE IF EXISTS {Schema}.\"Meta\";");
 
             // Types
@@ -86,7 +86,7 @@ namespace SDBrowser
             var tableMetas = new List<TableMeta>();
             for (var tblIdx = 0; tblIdx < DB.Tables.Count; tblIdx++) {
                 var table     = DB.Tables[tblIdx];
-                var tableName = Form1.GetTableOrFieldName(table.Id);
+                var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
                 var tableMeta = new TableMeta
                 {
                     Idx  = tblIdx,
@@ -100,7 +100,7 @@ namespace SDBrowser
                 for (var i = 0; i < table.Columns.Count; i++) {
                     var col  = table.Columns[i];
                     var typ  = GetSqlTypeForColum(col.Type);
-                    var name = Form1.GetTableOrFieldName(col.Id);
+                    var name = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(col.Id);
                     sb.Append($@"""{name}"" {typ}");
 
                     //if (false) sb.Append(" PRIMARY KEY");
@@ -248,7 +248,7 @@ namespace SDBrowser
             LogMsg("==== Importing data ====");
             Parallel.ForEach(DB.Tables, table =>
             {
-                var tableName = Form1.GetTableOrFieldName(table.Id);
+                var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
                 var conn      = OpenDbConnection();
                 BindTypes(conn);
 
@@ -260,7 +260,7 @@ namespace SDBrowser
                         for (var index = 0; index < row.Fields.Count; index++) {
                             var field      = row.Fields[index];
                             var fieldType  = table.Columns[index].Type;
-                            var columnName = Form1.GetTableOrFieldName(table.Columns[index].Id);
+                            var columnName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Columns[index].Id);
 
                             if (field == null) {
                                 writer.WriteNull();
@@ -284,7 +284,7 @@ namespace SDBrowser
                                     writer.Write(val);
                                 }
                                 else if (field is char fieldChar) {
-                                    if (fieldChar == '\0') { // feels abit eh, TODO: check incase of char trouble
+                                    if (fieldChar == '\0') { // feels abit eh, TODO: check in case of char trouble
                                         Console.WriteLine($"Got an invalid char {fieldChar} in table {tableName} on column {columnName} row {i}");
                                         writer.Write(' ');
                                     }
@@ -375,12 +375,12 @@ namespace SDBrowser
         private string CreateCopySql(StaticDB.Table table)
         {
             var sb        = new StringBuilder();
-            var tableName = Form1.GetTableOrFieldName(table.Id);
+            var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
             sb.Append($"COPY {Schema}.\"{tableName}\" (");
 
             for (var i = 0; i < table.Columns.Count; i++) {
                 var col  = table.Columns[i];
-                var name = Form1.GetTableOrFieldName(col.Id);
+                var name = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(col.Id);
                 sb.Append($"\"{name}\"");
 
                 if (table.Columns.Count - 1 != i) sb.Append(", ");

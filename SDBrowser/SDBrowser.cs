@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using Be.Windows.Forms;
@@ -13,14 +11,12 @@ using FauFau.Formats;
 using FauFau.Util.CommmonDataTypes;
 using static FauFau.Formats.StaticDB;
 using System.Text.RegularExpressions;
-using System.Drawing.Text;
+using System.Text.Json;
 
 
 namespace FauFau.SDBrowser {
-	public partial class Form1 : Form
+	public partial class SDBrowser : Form
     {
-
-
         private StaticDB sdb;
         private int openTable = -1;
 
@@ -37,8 +33,7 @@ namespace FauFau.SDBrowser {
         private int previousRow = -1;
         private int currentInspector = -1;
         private Control[] inspectorControls;
-        private System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-
+        private System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SDBrowser));
 
         private List<DBType> rawCopyableTypes = new List<DBType>
         {
@@ -62,7 +57,6 @@ namespace FauFau.SDBrowser {
             DBType.UShort,
             DBType.Byte
         };
-
 
         private int contextRow = -1;
         private int contextColumn = -1;
@@ -119,16 +113,14 @@ namespace FauFau.SDBrowser {
             }
         }
 
-
         public int GetSelectedTableIdx()
         {
             var name = lbTables.Items[lbTables.SelectedIndices[0]] as string;
             var idx  = TableNames.IndexOf(name);
             return idx;
         }
-        
 
-        public Form1()
+        public SDBrowser()
         {
             InitializeComponent();
 
@@ -176,9 +168,7 @@ namespace FauFau.SDBrowser {
             rtbOutput.Text = count + " of " + total + "fieldnames known";
 
             */
-
         }
-
 
         public static string ByteArrayToString(byte[] bytes)
         {
@@ -240,10 +230,8 @@ namespace FauFau.SDBrowser {
                 }
 
                 Console.WriteLine(x + " / " + y);
-
             }
         }
-
 
         public static string GetIdAsHex(uint id)
         {
@@ -261,6 +249,7 @@ namespace FauFau.SDBrowser {
                 return GetIdAsHex(id);
             }
         }
+
         private void ClearInspector()
         {
             if (flpInspect != null)
@@ -277,6 +266,7 @@ namespace FauFau.SDBrowser {
                 }
             }
         }
+
         private void LoadTableAndFieldNames()
         {
             if (File.Exists("fields.txt"))
@@ -336,7 +326,6 @@ namespace FauFau.SDBrowser {
                 }
             }
             */
-
         }
         private void OpenTable(int index)
         {
@@ -409,7 +398,6 @@ namespace FauFau.SDBrowser {
                     InspectRow(0);
                 }
             }
-
         }
         private object CellPreview(object data, DBType type)
         {
@@ -510,7 +498,6 @@ namespace FauFau.SDBrowser {
                 }
 
                 e.Value = CellPreview(sdb[openTable][e.RowIndex][e.ColumnIndex], sdb[openTable].Columns[e.ColumnIndex].Type);
-
             }
         }
 
@@ -750,19 +737,16 @@ namespace FauFau.SDBrowser {
                     case DBType.Matrix4x4:
                     case DBType.HalfMatrix4x3:
                         lbSearchResults.Items.Clear();
-                        lbSearchResults.Items.Add("Shtap! I dont know how to search for that yet");
+                        lbSearchResults.Items.Add("Shtap! I don't know how to search for that yet");
                         break;
-
                 }
             }
-
         }
 
 
 
         private void Search(object find, DBType type, int table = -1, bool clear = true)
         {
-
             if (clear)
             {
                 lbSearchResults.Items.Clear();
@@ -884,21 +868,14 @@ namespace FauFau.SDBrowser {
                 {
                     lbSearchResults.Items.Add(m);
                 }
-
-
             }
-
-
-
         }
 
         private void InspectRow(int row)
         {
-
             if (lbTables.SelectedIndices.Count > 0)
             {
                 flpInspect.SuspendLayout();
-
 
                 if (GetSelectedTableIdx() != currentInspector)
                 {
@@ -957,12 +934,8 @@ namespace FauFau.SDBrowser {
                     }
                 }
 
-
-
                 flpInspect.ResumeLayout(true);
-
             }
-
         }
 
         private Control CreateInspectorControl(DBType type)
@@ -1038,7 +1011,6 @@ namespace FauFau.SDBrowser {
                 case StaticDB.DBType.Half:
                 case StaticDB.DBType.Box3:
                     return CreateInspectorLabel("No inspector for this yet");
-
             }
 
             return null;
@@ -1184,9 +1156,7 @@ namespace FauFau.SDBrowser {
                 case StaticDB.DBType.Half:
                 case StaticDB.DBType.Box3:
                     break;
-
             }
-
         }
 
         private HexBox CreateInspectorHexBox()
@@ -1232,8 +1202,6 @@ namespace FauFau.SDBrowser {
             tb.Height = tb.Font.Height * numLines + padding + border;
 
             SimpleHighlight(tb);
-
-
         }
 
         private void SimpleHighlight(RichTextBox rtb)
@@ -1262,7 +1230,6 @@ namespace FauFau.SDBrowser {
                 rtb.SelectionStart = m.Groups[6].Index;
                 rtb.SelectionLength = m.Groups[6].Length;
                 rtb.SelectionColor = Color.DarkRed;
-
             }
         }
 
@@ -1404,9 +1371,7 @@ namespace FauFau.SDBrowser {
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
             cbSearchType.SelectedIndex = cbSearchType.Items.IndexOf(DBType.String);
-
 
             /*
             StringBuilder sbSecret = new StringBuilder();
@@ -1632,8 +1597,6 @@ namespace FauFau.SDBrowser {
             {
                 tbxDecrypt.Text = "Invalid input";
             }
-
-            
         }
 
 
@@ -1877,6 +1840,52 @@ namespace FauFau.SDBrowser {
             var dbWindow = new DBImportExport();
             dbWindow.Db = sdb;
             dbWindow.Show();
+        }
+
+        private void btnJsonExport_Click(object sender, EventArgs e)
+        {
+            var databases = new Dictionary<string, Dictionary<string, object>>();
+
+            foreach (var table in sdb.Tables)
+            {
+                var databaseTableName = GetTableOrFieldName(table.Id);
+                var names = databaseTableName.Split("::");
+                if (names.Length < 2)
+                {
+                    MessageBox.Show($"Invalid database table name {databaseTableName}");
+                    continue;
+                }
+
+                var databaseName = names[0];
+                var tableName = names[1];
+
+                if (!databases.ContainsKey(databaseName))
+                {
+                    databases.Add(databaseName, new Dictionary<string, object>());
+                }
+
+                if (!databases[databaseName].ContainsKey(tableName))
+                {
+                    databases[databaseName].Add(tableName, new
+                    {
+                        Id = table.Id,
+                        Columns = table.Columns.Select(c => new
+                        {
+                            c.Id,
+                            Name = GetTableOrFieldName(c.Id)
+                        }).ToList()
+                    });
+                }
+            }
+
+            var schema = JsonSerializer.Serialize(databases, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+            Clipboard.SetText(schema);
+
+            MessageBox.Show("SDB schema was copied to the clipboard as JSON", "SDB Schema JSON Export",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
