@@ -12,7 +12,9 @@ using FauFau.Util.CommmonDataTypes;
 using static FauFau.Formats.StaticDB;
 using System.Text.RegularExpressions;
 using System.Text.Json;
-
+using SDBrowser.Schema;
+using Column = SDBrowser.Schema.Column;
+using Table = SDBrowser.Schema.Table;
 
 namespace FauFau.SDBrowser {
 	public partial class SDBrowser : Form
@@ -339,7 +341,7 @@ namespace FauFau.SDBrowser {
             dgvRows.SuspendLayout();
             dgvRows.RowHeadersVisible = false;
 
-            foreach (Column c in sdb[index].Columns)
+            foreach (StaticDB.Column c in sdb[index].Columns)
             {
                 string fName = GetTableOrFieldName(c.Id);
                 string hexId = GetIdAsHex(c.Id);
@@ -886,7 +888,7 @@ namespace FauFau.SDBrowser {
                     ClearInspector();
 
                     int x = 0;
-                    foreach (Column column in sdb[currentInspector].Columns)
+                    foreach (StaticDB.Column column in sdb[currentInspector].Columns)
                     {
                         FlowLayoutPanel p = new FlowLayoutPanel();
 
@@ -915,7 +917,7 @@ namespace FauFau.SDBrowser {
                 if (sdb[currentInspector].Count() > row)
                 {
                     int y = 0;
-                    foreach (Column column in sdb[currentInspector].Columns)
+                    foreach (StaticDB.Column column in sdb[currentInspector].Columns)
                     {
 
                         object current = sdb[currentInspector][row][y];
@@ -927,7 +929,7 @@ namespace FauFau.SDBrowser {
                 else
                 {
                     int y = 0;
-                    foreach (Column column in sdb[currentInspector].Columns)
+                    foreach (StaticDB.Column column in sdb[currentInspector].Columns)
                     {
                         SetInspectorControlValue(column.Type, inspectorControls[y], null);
                         y++;
@@ -1844,7 +1846,7 @@ namespace FauFau.SDBrowser {
 
         private void btnJsonExport_Click(object sender, EventArgs e)
         {
-            var databases = new Dictionary<string, Dictionary<string, object>>();
+            var databases = new List<Database>();
 
             foreach (var table in sdb.Tables)
             {
@@ -1859,20 +1861,25 @@ namespace FauFau.SDBrowser {
                 var databaseName = names[0];
                 var tableName = names[1];
 
-                if (!databases.ContainsKey(databaseName))
+                if (!databases.Exists(d => d.Name == databaseName))
                 {
-                    databases.Add(databaseName, new Dictionary<string, object>());
+                    databases.Add(new Database
+                    {
+                        Name = databaseName
+                    });
                 }
 
-                if (!databases[databaseName].ContainsKey(tableName))
+                if (!databases.Single(d => d.Name == databaseName).Tables.Exists(t => t.Name == tableName))
                 {
-                    databases[databaseName].Add(tableName, new
+                    databases.Single(d => d.Name == databaseName).Tables.Add(new Table
                     {
                         Id = table.Id,
-                        Columns = table.Columns.Select(c => new
+                        Name = tableName,
+                        Columns = table.Columns.Select(c => new Column
                         {
-                            c.Id,
-                            Name = GetTableOrFieldName(c.Id)
+                            Id = c.Id,
+                            Name = GetTableOrFieldName(c.Id),
+                            Type = c.Type.ToString().ToLower()
                         }).ToList()
                     });
                 }
