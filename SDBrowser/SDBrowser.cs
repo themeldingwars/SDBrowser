@@ -35,6 +35,13 @@ namespace FauFau.SDBrowser {
         private Control[] inspectorControls;
         private System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SDBrowser));
 
+        /// <summary>
+        ///  Holds a copy of the most recent db query.
+        ///  This allows us to further filter the results based on 
+        ///  table names without having to initiate another table search.
+        /// </summary>
+        private List<string> searchCache = new List<string>();
+
         private List<DBType> rawCopyableTypes = new List<DBType>
         {
             DBType.AsciiChar,
@@ -506,7 +513,15 @@ namespace FauFau.SDBrowser {
         {
             StaticDB.DBType type = (StaticDB.DBType)cbSearchType.SelectedIndex + 1;
 
-            if (type == DBType.Unknown)
+            // Clear the old search results from the cache.
+            searchCache.Clear();
+
+            if (sdb == null)
+            {
+                lbSearchResults.Items.Clear();
+                lbSearchResults.Items.Add("Load the db first!");
+            }
+            else if (type == DBType.Unknown)
             {
                 lbSearchResults.Items.Clear();
                 lbSearchResults.Items.Add("You have to pick a datatype first");
@@ -741,6 +756,9 @@ namespace FauFau.SDBrowser {
                         break;
                 }
             }
+
+            if (lbSearchResults.Items.Count < 1)
+                lbSearchResults.Items.Add("No matches!");
         }
 
 
@@ -754,9 +772,20 @@ namespace FauFau.SDBrowser {
 
             if (table == -1)
             {
-                for (int i = 0; i < sdb.Tables.Count(); i++)
+                /* Searches all tables. */
+                // for (int i = 0; i < sdb.Tables.Count(); i++)
+                // {
+                //     Search(find, type, i, false);
+                // }
+
+                /* Searches only the currently visible tables. */
+                for (int i = 0; i < lbTables.Items.Count; ++i)
                 {
-                    Search(find, type, i, false);
+                    string   item   = (string) lbTables.Items[i];
+                    string[] split  = item.Split(' ');
+                    int      tblNum = Int32.Parse(split[0]);
+                
+                    Search(find, type, tblNum, false);
                 }
             }
             else
@@ -867,6 +896,7 @@ namespace FauFau.SDBrowser {
                 foreach (string m in matches)
                 {
                     lbSearchResults.Items.Add(m);
+                    searchCache.Add(m);
                 }
             }
         }
@@ -1305,7 +1335,11 @@ namespace FauFau.SDBrowser {
         {
             if (lbTables.SelectedItems.Count > 0)
             {
-                DoSearch(lbTables.SelectedIndex);
+                string item  = (string) lbTables.SelectedItem;
+                string split = item.Split(' ')[0];
+                int    index = Int32.Parse(split);
+
+                DoSearch(index);
             }
         }
 
@@ -1323,27 +1357,43 @@ namespace FauFau.SDBrowser {
                 int table = int.Parse(go[0]);
                 int row = int.Parse(go[1]);
                 int field = int.Parse(go[2]);
-
-                if (lbTables.Items.Count >= table)
+                
+                /* Find the correct ListBox index for the given table.
+                 * This is necessary when the tables ListBox is being filtered by the user. */
+                int lbTableIndex = -1;
+                string prefix = $"{table} "; // the space is important!
+                for (int i = 0; i < lbTables.Items.Count; ++i)
                 {
-                    if (lbTables.SelectedIndices.Count == 0 || GetSelectedTableIdx() != table)
+                    string name = (string) lbTables.Items[i];
+                    if (name.StartsWith(prefix))
                     {
-                        lbTables.SelectedIndex = table;
-                        CurrentRow = row;
-                        CurrentColumn = field;
-                        dgvRows.Rows[row].Selected = true;
+                        lbTableIndex = i;
+                        break;
                     }
-                    else if (lbTables.SelectedIndices.Count != 0 || GetSelectedTableIdx() == table)
-                    {
+                }
 
-                        if (dgvRows.Rows.Count >= row)
+                /* No visible table in the ListBox matches the selected table. 
+                 * This would likely be because the tables ListBox is being filtered by the user. */
+                if (lbTableIndex < 0)
+                    return;
+
+                if (lbTables.SelectedIndices.Count == 0 || GetSelectedTableIdx() != table)
+                {
+                    lbTables.SelectedIndex = lbTableIndex;
+                    CurrentRow = row;
+                    CurrentColumn = field;
+                    dgvRows.Rows[row].Selected = true;
+                }
+                else if (lbTables.SelectedIndices.Count != 0 || GetSelectedTableIdx() == table)
+                {
+
+                    if (dgvRows.Rows.Count >= row)
+                    {
+                        if (dgvRows.Columns.Count >= field)
                         {
-                            if (dgvRows.Columns.Count >= field)
-                            {
-                                CurrentRow = row;
-                                CurrentColumn = field;
-                                dgvRows.Rows[row].Selected = true;
-                            }
+                            CurrentRow = row;
+                            CurrentColumn = field;
+                            dgvRows.Rows[row].Selected = true;
                         }
                     }
                 }
@@ -1833,6 +1883,28 @@ namespace FauFau.SDBrowser {
                     lbTables.Items.Add(tableName);
                 }
             }
+
+            /* Update the search results to show only records that are 
+             * present in the filtered tables. The search results are cached, 
+             * so the results list can be updated frequently. */
+            lbSearchResults.Items.Clear();
+
+            List<int> tableNums = new List<int>();
+            foreach (string tableName in lbTables.Items)
+            {
+                int tableNum = Int32.Parse(tableName.Split(' ')[0]);
+                tableNums.Add(tableNum);
+            }
+
+            foreach (string item in searchCache)
+            {
+                int tableNum = Int32.Parse(item.Split(':')[0]);
+                if (tableNums.Contains(tableNum))
+                    lbSearchResults.Items.Add(item);
+            }
+
+            if (lbSearchResults.Items.Count < 1)
+                lbSearchResults.Items.Add("No matches!");
         }
 
         private void DB_ImportExport_Click(object sender, EventArgs e)
