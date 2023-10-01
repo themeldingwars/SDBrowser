@@ -772,11 +772,6 @@ namespace FauFau.SDBrowser {
 
             if (table == -1)
             {
-                /* Searches all tables. */
-                // for (int i = 0; i < sdb.Tables.Count(); i++)
-                // {
-                //     Search(find, type, i, false);
-                // }
 
                 /* Searches only the currently visible tables. */
                 for (int i = 0; i < lbTables.Items.Count; ++i)
