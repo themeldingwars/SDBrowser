@@ -1,11 +1,8 @@
-
 # SDBrowser
-*Browser for Firefalls Static Database*
+
+*Browser for Firefall's Static Database*
 
 This tool was created for educational purposes only and should not be used by anyone.
-
-
-
 
 **This repository is using submodules, so in order to properly clone it use this**
 ```
@@ -19,4 +16,3 @@ git clone https://github.com/themeldingwars/SDBrowser.git
 cd SDBrowser
 git submodule update --init --recursive
 ```
-
