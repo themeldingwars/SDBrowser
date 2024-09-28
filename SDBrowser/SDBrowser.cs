@@ -12,6 +12,8 @@ using FauFau.Util.CommmonDataTypes;
 using static FauFau.Formats.StaticDB;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using FauFau.Util;
+using Color = System.Drawing.Color;
 
 
 namespace FauFau.SDBrowser {
@@ -21,10 +23,15 @@ namespace FauFau.SDBrowser {
         private int openTable = -1;
 
         public static Dictionary<uint, string> stringDb = new Dictionary<uint, string>();
-        public List<string> usedStrings = new List<string>();
         public List<string> clearedStrings = new List<string>();
         public Dictionary<uint, List<string>> dupes = new Dictionary<uint, List<string>>();
+
+        public List<string> approvedStrings = new List<string>();
+        public HashSet<string> saveableStrings = new HashSet<string>();
+
+
         private List<string> TableNames = new List<string>();
+
 
         private Tuple<string, StaticDB.DBType>[] fields;
         private int realScroll = 0;
@@ -150,31 +157,6 @@ namespace FauFau.SDBrowser {
 
             LoadTableAndFieldNames();
             //LoadDB(@"V:\refall\Firefall\system\db\clientdb.sd2");
-
-            /*
-            
-            int count = 0;
-            int total = 0;
-            foreach (var table in sdb)
-            {
-                total++;
-                if(stringDb.ContainsKey(table.Id))
-                {
-                    count++;
-                }
-                foreach(var column in table.Columns)
-                {
-                    total++;
-                    if (stringDb.ContainsKey(column.Id))
-                    {
-                        count++;
-                    }
-                }
-            }
-
-            rtbOutput.Text = count + " of " + total + "fieldnames known";
-
-            */
         }
 
         public static string ByteArrayToString(byte[] bytes)
@@ -200,43 +182,108 @@ namespace FauFau.SDBrowser {
                     (t1, t2) => t1.Concat(new T[] { t2 }));
         }
 
+        private void DebugStringHashCoverage()
+        {
+            if (sdb == null) {
+                return;
+            }
+            
+            var sbTables = new StringBuilder();
+            var sbFields = new StringBuilder();
+            int missingTables = 0;
+            int missingFields = 0;
+            int totalFields = 0;
+            int totalTables = sdb.Tables.Count;
+
+            // Ensure we keep all approved strings
+            foreach (string str in approvedStrings)
+            {
+                saveableStrings.Add(str);
+            }
+
+            // Add any matching strings to saveable
+            foreach (var table in sdb)
+            {
+                if (!stringDb.ContainsKey(table.Id)) {
+                    missingTables++;
+                    sbTables.AppendLine($"{sdb.Tables.IndexOf(table)} - {GetIdAsHex(table.Id)}");
+                } else {
+                    saveableStrings.Add(GetTableOrFieldName(table.Id));
+                }
+                foreach(var column in table.Columns)
+                {
+                    totalFields++;
+                    if (!stringDb.ContainsKey(column.Id))
+                    {
+                        missingFields++;
+                        sbFields.AppendLine($"{GetTableOrFieldName(table.Id)} - {GetIdAsHex(column.Id)} ({column.Type})");
+                    } else {
+                        saveableStrings.Add(GetTableOrFieldName(column.Id));
+                    }
+                }
+            }
+
+            var sb = new StringBuilder();
+            if (saveableStrings.Count > approvedStrings.Count) {
+                sb.AppendLine($"The test strings contained {saveableStrings.Count - approvedStrings.Count} matches:");
+                foreach (string str in saveableStrings) {
+                    if (!approvedStrings.Contains(str)) {
+                        sb.AppendLine($"{Checksum.FFnv32(str).ToString("X4")} - {str}");
+                    }
+                }
+                sb.AppendLine();
+            }
+
+            if (missingTables > 0) {
+                sb.AppendLine($"Missing {missingTables} out of {totalTables} table names:");
+                sb.Append(sbTables.ToString());
+                sb.AppendLine();
+            } else {
+                sb.AppendLine($"All {totalTables} table names filled");
+            }
+            if (missingFields > 0) {
+                sb.AppendLine($"Missing {missingFields} out of {totalFields} field names:");
+                sb.Append(sbFields.ToString());
+                sb.AppendLine();
+            } else {
+                sb.AppendLine($"All {totalFields} field names filled");
+            }
+
+            rtbOutput.Clear();
+            rtbOutput.Text = sb.ToString();
+        }
+
         private void LoadDB(string filePath)
         {
             if (File.Exists(filePath))
             {
-                // clear
+                // Clear
                 lbTables.Items.Clear();
                 dgvRows.Rows.Clear();
                 dgvRows.Columns.Clear();
                 TableNames.Clear();
                 ClearInspector();
 
-                // load the new db
+                // Load the new db
                 sdb = new StaticDB();
                 sdb.Read(filePath);
 
+                // Display basic info
                 lblPatch.Text = "Patch: " + sdb.Patch;
                 lblFlags.Text = "Flags: " + sdb.Flags;
                 lblCreated.Text = "Created: " + sdb.Timestamp.ToString() + " UTC";
                 lblLoaded.Text = filePath;
 
-                int x = 0;
-                int y = 0;
+                // Load table names into table list
                 for (int i = 0; i < sdb.Count(); i++)
                 {
-                    string hex = GetIdAsHex(sdb[i].Id);
-                    if(!hex.Equals(GetTableOrFieldName(sdb[i].Id)))
-                    {
-                        x++;
-                    }
-                    y++;
-
                     var name = i.ToString().PadRight(8) + GetTableOrFieldName(sdb[i].Id);
                     TableNames.Add(name);
                     lbTables.Items.Add(name);
                 }
 
-                Console.WriteLine(x + " / " + y);
+                // Debug hash coverage
+                DebugStringHashCoverage();
             }
         }
 
@@ -274,65 +321,49 @@ namespace FauFau.SDBrowser {
             }
         }
 
+        private void AddStringsToStringDB(List<string> strings)
+        {
+            foreach (string str in strings)
+            {
+                uint key = FauFau.Util.Checksum.FFnv32(str);
+
+                if (!stringDb.ContainsKey(key))
+                {
+                    stringDb.Add(key, str);
+                    dupes.Add(key, new List<string>());
+                    dupes[key].Add(str);
+                }
+                else
+                {
+                    if (!str.Equals(stringDb[key]))
+                    {
+                        Console.WriteLine("Collision: " + key + " : " + stringDb[key] + ", " + str);
+                        dupes[key].Add(str);
+                    }
+                }
+
+            }
+        }
+
         private void LoadTableAndFieldNames()
         {
+            // fields.txt holds strings we are confident have valid matches in some databases
+            // All of them will be added to the StringDB first.
             if (File.Exists("fields.txt"))
             {
-                usedStrings = File.ReadAllLines("fields.txt").ToList();
+                approvedStrings = File.ReadAllLines("fields.txt").ToList();
+                AddStringsToStringDB(approvedStrings);
+
+                // Not sure what these are for so keeping them
                 clearedStrings = File.ReadAllLines("fields.txt").ToList();
-
-                foreach (string str in usedStrings)
-                {
-                    uint key = FauFau.Util.Checksum.FFnv32(str);
-
-                    if (!stringDb.ContainsKey(key))
-                    {
-                        stringDb.Add(key, str);
-                        dupes.Add(key, new List<string>());
-                        dupes[key].Add(str);
-                    }
-                    else
-                    {
-                        if (!str.Equals(stringDb[key]))
-                        {
-                            Console.WriteLine("collision: " + key + " : " + stringDb[key] + ", " + str);
-                            dupes[key].Add(str);
-                        }
-                    }
-
-                }
             }
 
-            /*
-            if (File.Exists("console.log"))
+            // test-fields.txt can be used to add additional strings you want include for testing
+            if (File.Exists("test-fields.txt"))
             {
-                string log = File.ReadAllText("console.log");
-                usedStrings = log.Split(new char[] {' ', '\n' }).ToList();
-
-                foreach (string stra in usedStrings)
-                {
-                    string str = stra.Trim().Replace("'", "");
-                    uint key = FauFau.Util.Checksum.FFnv32(str);
-
-                    if (!stringDb.ContainsKey(key))
-                    {
-                        stringDb.Add(key, str);
-                        dupes.Add(key, new List<string>());
-                        dupes[key].Add(str);
-                        Console.WriteLine(str + "\n");
-                    }
-                    else
-                    {
-                        if (!str.Equals(stringDb[key]))
-                        {
-                            Console.WriteLine("collision: " + key + " : " + stringDb[key] + ", " + str);
-                            dupes[key].Add(str);
-                        }
-                    }
-
-                }
+                List<string> testStrings = File.ReadAllLines("test-fields.txt").ToList();
+                AddStringsToStringDB(testStrings);
             }
-            */
         }
         private void OpenTable(int index)
         {
@@ -1573,6 +1604,7 @@ namespace FauFau.SDBrowser {
 
         private void btnDecrypt_Click(object sender, EventArgs e)
         {
+            rtbOutput.Clear();
 
             uint key;
             if(uint.TryParse(tbxDecrypt.Text, out key))
@@ -1715,8 +1747,11 @@ namespace FauFau.SDBrowser {
         private void btnGetHash_Click(object sender, EventArgs e)
         {
             rtbOutput.Clear();
-            rtbOutput.Text = "Hashing string : " + tbxDecrypt.Text + "\n";
-            //rtbOutput.Text += "Result         : 0x" + StaticDB.FFnv32(tbxDecrypt.Text).ToString("X4");
+            rtbOutput.Text = "Hashing: " + tbxDecrypt.Text + "\n";
+            rtbOutput.Text += "Result: 0x" + Checksum.FFnv32(tbxDecrypt.Text).ToString("X4");
+
+            // DebugStringHashCoverage();
+            // File.WriteAllLines("saved-fields.txt", saveableStrings);
         }
 
         private void lvTables_VisibleChanged(object sender, EventArgs e)
