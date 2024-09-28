@@ -136,7 +136,7 @@ namespace SDBrowser
             var dbMeta = new SdbMeta
             {
                 Patch        = DB.Patch,
-                Flags        = DB.Flags,
+                Flags        = (uint)DB.Flags,
                 Timestamp    = DB.Timestamp,
                 FileVersion  = (uint)GetInstanceField(DB.GetType(), DB, "fileVersion"),
                 TableVersion = (uint)GetInstanceField(DB.GetType(), DB, "tableVersion")
