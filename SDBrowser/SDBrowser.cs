@@ -25,13 +25,7 @@ namespace FauFau.SDBrowser {
         public static Dictionary<uint, string> stringDb = new Dictionary<uint, string>();
         public List<string> clearedStrings = new List<string>();
         public Dictionary<uint, List<string>> dupes = new Dictionary<uint, List<string>>();
-
-        public List<string> approvedStrings = new List<string>();
-        public HashSet<string> saveableStrings = new HashSet<string>();
-
-
         private List<string> TableNames = new List<string>();
-
 
         private Tuple<string, StaticDB.DBType>[] fields;
         private int realScroll = 0;
@@ -187,6 +181,8 @@ namespace FauFau.SDBrowser {
             if (sdb == null) {
                 return;
             }
+
+            HashSet<string> saveableStrings = new HashSet<string>();
             
             var sbTables = new StringBuilder();
             var sbFields = new StringBuilder();
@@ -195,8 +191,8 @@ namespace FauFau.SDBrowser {
             int totalFields = 0;
             int totalTables = sdb.Tables.Count;
 
-            // Ensure we keep all approved strings
-            foreach (string str in approvedStrings)
+            // Ensure we keep all cleared strings
+            foreach (string str in clearedStrings)
             {
                 saveableStrings.Add(str);
             }
@@ -224,10 +220,10 @@ namespace FauFau.SDBrowser {
             }
 
             var sb = new StringBuilder();
-            if (saveableStrings.Count > approvedStrings.Count) {
-                sb.AppendLine($"The test strings contained {saveableStrings.Count - approvedStrings.Count} matches:");
+            if (saveableStrings.Count > clearedStrings.Count) {
+                sb.AppendLine($"The test strings contained {saveableStrings.Count - clearedStrings.Count} matches:");
                 foreach (string str in saveableStrings) {
-                    if (!approvedStrings.Contains(str)) {
+                    if (!clearedStrings.Contains(str)) {
                         sb.AppendLine($"{Checksum.FFnv32(str).ToString("X4")} - {str}");
                     }
                 }
@@ -251,6 +247,8 @@ namespace FauFau.SDBrowser {
 
             rtbOutput.Clear();
             rtbOutput.Text = sb.ToString();
+
+            // File.WriteAllLines("saved-fields.txt", saveableStrings);
         }
 
         private void LoadDB(string filePath)
@@ -283,7 +281,11 @@ namespace FauFau.SDBrowser {
                 }
 
                 // Debug hash coverage
-                DebugStringHashCoverage();
+                if (bool.TryParse(System.Configuration.ConfigurationManager.AppSettings["DebugStringHashCoverage"], out bool value)) {
+                    if (value) {
+                        DebugStringHashCoverage();
+                    }
+                }
             }
         }
 
@@ -349,13 +351,11 @@ namespace FauFau.SDBrowser {
         {
             // fields.txt holds strings we are confident have valid matches in some databases
             // All of them will be added to the StringDB first.
+            // We store them in clearedStrings because our StringDB will also hold duplicates. This allows us to later highlight a column if we have multiple matches and haven't selected the one we think is right.
             if (File.Exists("fields.txt"))
             {
-                approvedStrings = File.ReadAllLines("fields.txt").ToList();
-                AddStringsToStringDB(approvedStrings);
-
-                // Not sure what these are for so keeping them
                 clearedStrings = File.ReadAllLines("fields.txt").ToList();
+                AddStringsToStringDB(clearedStrings);
             }
 
             // test-fields.txt can be used to add additional strings you want include for testing
@@ -1749,9 +1749,6 @@ namespace FauFau.SDBrowser {
             rtbOutput.Clear();
             rtbOutput.Text = "Hashing: " + tbxDecrypt.Text + "\n";
             rtbOutput.Text += "Result: 0x" + Checksum.FFnv32(tbxDecrypt.Text).ToString("X4");
-
-            // DebugStringHashCoverage();
-            // File.WriteAllLines("saved-fields.txt", saveableStrings);
         }
 
         private void lvTables_VisibleChanged(object sender, EventArgs e)
