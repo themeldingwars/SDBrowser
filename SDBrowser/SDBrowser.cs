@@ -1867,7 +1867,7 @@ namespace FauFau.SDBrowser {
 
                 //text:
                 SolidBrush foregroundBrush = (selected) ? reportsForegroundBrushSelected : reportsForegroundBrush;
-                g.DrawString(text, e.Font, foregroundBrush, lbSearchResults.GetItemRectangle(index).Location);
+                g.DrawString(text, e.Font, foregroundBrush, e.Bounds.X, e.Bounds.Y);
             }
 
             e.DrawFocusRectangle();
@@ -1897,7 +1897,7 @@ namespace FauFau.SDBrowser {
 
                 //text:
                 SolidBrush foregroundBrush = (selected) ? reportsForegroundBrushSelected : reportsForegroundBrush;
-                g.DrawString(text, e.Font, foregroundBrush, lbTables.GetItemRectangle(index).Location);
+                g.DrawString(text, e.Font, foregroundBrush, e.Bounds.X, e.Bounds.Y);
             }
 
             e.DrawFocusRectangle();
