@@ -352,16 +352,17 @@ namespace FauFau.SDBrowser {
             // fields.txt holds strings we are confident have valid matches in some databases
             // All of them will be added to the StringDB first.
             // We store them in clearedStrings because our StringDB will also hold duplicates. This allows us to later highlight a column if we have multiple matches and haven't selected the one we think is right.
-            if (File.Exists("fields.txt"))
+            string exeDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            if (File.Exists(Path.Combine(exeDirectory, "fields.txt")))
             {
-                clearedStrings = File.ReadAllLines("fields.txt").ToList();
+                clearedStrings = File.ReadAllLines(Path.Combine(exeDirectory, "fields.txt")).ToList();
                 AddStringsToStringDB(clearedStrings);
             }
 
             // test-fields.txt can be used to add additional strings you want include for testing
-            if (File.Exists("test-fields.txt"))
+            if (File.Exists(Path.Combine(exeDirectory, "test-fields.txt")))
             {
-                List<string> testStrings = File.ReadAllLines("test-fields.txt").ToList();
+                List<string> testStrings = File.ReadAllLines(Path.Combine(exeDirectory, "test-fields.txt")).ToList();
                 AddStringsToStringDB(testStrings);
             }
         }
