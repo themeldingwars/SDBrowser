@@ -1323,6 +1323,7 @@ namespace FauFau.SDBrowser {
             dgv.Location = new System.Drawing.Point(0, 0);
             dgv.MultiSelect = false;
             dgv.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
+            dgv.ShowCellToolTips = false;
 
             //dgv.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
 
