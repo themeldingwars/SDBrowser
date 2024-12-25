@@ -24,6 +24,8 @@ namespace SDBrowser
 
         private NpgsqlConnection DbConn;
 
+        public bool HasConnection => DbConn != null;
+
         public PgImportExport(string connStr, string schema, StaticDB db, Action<string, bool> logMessage)
         {
             ConnStr    = connStr;

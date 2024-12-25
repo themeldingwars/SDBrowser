@@ -34,17 +34,22 @@ namespace FauFau.SDBrowser
                 var connStr          = $"{tbDbConnStr.Text}; Search Path={tbSchemaName.Text};";
                 var importerExporter = new PgImportExport(connStr, tbSchemaName.Text, Db, LogMsg);
 
-                if (cbDropExisting.Checked) {
-                    importerExporter.DropExisting();
-                }
+                if (importerExporter.HasConnection)
+                {
+                    if (cbDropExisting.Checked) {
+                        importerExporter.DropExisting();
+                    }
 
-                if (cbCreateSchema.Checked) {
-                    importerExporter.CreateSchema();
-                }
+                    if (cbCreateSchema.Checked) {
+                        importerExporter.CreateSchema();
+                    }
 
-                if (cbImportData.Checked) {
-                    importerExporter.ImportData();
-                    GC.Collect();
+                    if (cbImportData.Checked) {
+                        importerExporter.ImportData();
+                        GC.Collect();
+                    }
+                } else {
+                    LogMsg($"Error - Could not connect to the database, please check the connection string");
                 }
 
                 sw.Stop();
