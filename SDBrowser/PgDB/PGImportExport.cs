@@ -141,7 +141,7 @@ namespace SDBrowser
                 Flags        = (uint)DB.Flags,
                 Timestamp    = DB.Timestamp,
                 FileVersion  = (uint)GetInstanceField(DB.GetType(), DB, "fileVersion"),
-                TableVersion = (uint)GetInstanceField(DB.GetType(), DB, "tableVersion")
+                MemoryVersion = (uint)GetInstanceField(DB.GetType(), DB, "memoryVersion")
             };
 
             void AddToMetaTable(string name, MetaType type, string data) => sqls.Add($@"INSERT INTO {Schema}.""Meta"" (name, type, data) VALUES ('{name}', {(int) type}, CAST('{data}' as json));");
@@ -516,7 +516,7 @@ namespace SDBrowser
             public DateTime Timestamp    { get; set; }
             public uint     Flags        { get; set; }
             public uint     FileVersion  { get; set; }
-            public uint     TableVersion { get; set; }
+            public uint     MemoryVersion { get; set; }
         }
 
         public class TableMeta
