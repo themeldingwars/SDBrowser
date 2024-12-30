@@ -234,6 +234,7 @@ namespace SDBrowser
         private void BindTypes(NpgsqlConnection conn)
         {
             var schemaLc = Schema.ToLower();
+            NpgsqlConnection.GlobalTypeMapper.Reset();
             NpgsqlConnection.GlobalTypeMapper.MapComposite<Vector2>($"{schemaLc}.vector2");
             NpgsqlConnection.GlobalTypeMapper.MapComposite<Vector3>($"{schemaLc}.vector3");
             NpgsqlConnection.GlobalTypeMapper.MapComposite<Vector4>($"{schemaLc}.vector4");
@@ -265,7 +266,20 @@ namespace SDBrowser
                             var columnName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Columns[index].Id);
 
                             if (field == null) {
-                                writer.WriteNull();
+                                if (!table.IsColumnNullable(table.Columns[index]))
+                                {
+                                    if (fieldType == StaticDB.DBType.Vector2Array)
+                                    {
+                                        writer.Write(new List<Vector2>());
+                                    } else if (fieldType == StaticDB.DBType.Blob)
+                                    {
+                                        writer.Write(new List<byte>());
+                                    }
+                                }
+                                else
+                                {
+                                    writer.WriteNull();
+                                }
                             }
                             else if (IsBasicType(fieldType)) {
                                 if (fieldType == StaticDB.DBType.UShort) {
@@ -419,7 +433,7 @@ namespace SDBrowser
                 StaticDB.DBType.AsciiChar     => "character",
                 StaticDB.DBType.ByteArray     => "bytea",
                 StaticDB.DBType.UShortArray   => "integer[]",
-                StaticDB.DBType.UIntArray     => "bigint]",
+                StaticDB.DBType.UIntArray     => "bigint[]",
                 StaticDB.DBType.HalfMatrix4x3 => "halfmatrix4x3",
                 StaticDB.DBType.Half          => "real",
                 _                             => ""

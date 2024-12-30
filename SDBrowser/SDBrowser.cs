@@ -1432,7 +1432,8 @@ namespace FauFau.SDBrowser {
         {
             if (e.ColumnIndex > -1 && e.RowIndex > -1)
             {
-                Clipboard.SetText((string)dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].FormattedValue);
+                var value = (string)dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].FormattedValue;
+                Clipboard.SetText(string.IsNullOrEmpty(value) ? "-" : value);
 
             }
         }
