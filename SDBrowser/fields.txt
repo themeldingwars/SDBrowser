@@ -3035,3 +3035,9 @@ min_int
 max_int
 add_power
 add_mass
+dbzonemetadata::ZoneRoute
+dbzonemetadata::ZoneRoutes
+apt::LoadRegisterFromStageCommandDef
+stage_data
+from_zone
+to_zone
