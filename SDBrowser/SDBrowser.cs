@@ -15,7 +15,6 @@ using System.Text.Json;
 using FauFau.Util;
 using Color = System.Drawing.Color;
 
-
 namespace FauFau.SDBrowser {
 	public partial class SDBrowser : Form
     {
@@ -1612,8 +1611,7 @@ namespace FauFau.SDBrowser {
             uint key;
             if(uint.TryParse(tbxDecrypt.Text, out key))
             {
-                
-                uint key2 = BitConverter.ToUInt32(BitConverter.GetBytes(key).Reverse().ToArray(), 0);
+                uint key2 = BitConverter.ToUInt32(Enumerable.Reverse(BitConverter.GetBytes(key)).ToArray(), 0);
                 bool match = false;
 
                 try
