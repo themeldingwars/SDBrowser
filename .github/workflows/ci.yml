@@ -15,19 +15,20 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-        - { name: Windows VS2022, os: windows-2022 }
+        - { name: Windows VS2022, os: windows-2025 }
         dotnet:
         - { name: .NET 8, version: '8.0.x' }
+        - { name: .NET 10, version: '10.0.x' }
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
             
       - name: Setup .NET ${{ matrix.dotnet.version }} SDK
         id: setup-dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ matrix.dotnet.version }}
       - name: Enforce SDK Version
