@@ -1,0 +1,11 @@
+<Project>
+    <PropertyGroup>
+        <Company>The Melding Wars</Company>
+        <Product>SDBrowser</Product>
+        <Authors>The Melding Wars</Authors>
+        <Copyright>Copyright © 2018-2026 The Melding Wars</Copyright>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <RepositoryUrl>https://github.com/themeldingwars/SDBrowser</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+</Project>

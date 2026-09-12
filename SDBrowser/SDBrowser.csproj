@@ -6,7 +6,6 @@
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
-    <Authors>TheMeldingWars</Authors>
   </PropertyGroup>
 
   <PropertyGroup>

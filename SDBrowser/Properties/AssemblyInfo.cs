@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("FauFau.SDBrowser")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("The Melding Wars")]
 [assembly: AssemblyProduct("FauFau.SDBrowser")]
-[assembly: AssemblyCopyright("Copyright ©  2018")]
+[assembly: AssemblyCopyright("Copyright © 2018-2026 The Melding Wars")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
