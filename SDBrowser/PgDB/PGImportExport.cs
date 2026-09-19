@@ -28,7 +28,7 @@ namespace SDBrowser
 
         public PgImportExport(string connStr, string schema, StaticDB db, Action<string, bool> logMessage)
         {
-            ConnStr    = connStr;
+            ConnStr    = new NpgsqlConnectionStringBuilder(connStr) { GssEncryptionMode = GssEncryptionMode.Disable }.ConnectionString;
             Schema     = schema;
             DB         = db;
             LogMessage = logMessage;
