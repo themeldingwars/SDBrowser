@@ -227,33 +227,32 @@ namespace SDBrowser
                      "max Vector3);");
 
             ExecuteSqls(sqls, false);
-
-            BindTypes(DbConn);
         }
 
-        private void BindTypes(NpgsqlConnection conn)
+        private NpgsqlDataSource BuildDataSource()
         {
             var schemaLc = Schema.ToLower();
-            NpgsqlConnection.GlobalTypeMapper.Reset();
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<Vector2>($"{schemaLc}.vector2");
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<Vector3>($"{schemaLc}.vector3");
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<Vector4>($"{schemaLc}.vector4");
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<Matrix4x4>($"{schemaLc}.matrix4x4");
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<DBTypes.Half3>($"{schemaLc}.half3");
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<DBTypes.HalfMatrix4x3>($"{schemaLc}.halfmatrix4x3");
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<DBTypes.Box3>($"{schemaLc}.box3");
-            
-            conn.ReloadTypes();
+            var builder  = new NpgsqlDataSourceBuilder(ConnStr);
+            builder.MapComposite<Vector2>($"{schemaLc}.vector2");
+            builder.MapComposite<Vector3>($"{schemaLc}.vector3");
+            builder.MapComposite<Vector4>($"{schemaLc}.vector4");
+            builder.MapComposite<Matrix4x4>($"{schemaLc}.matrix4x4");
+            builder.MapComposite<DBTypes.Half3>($"{schemaLc}.half3");
+            builder.MapComposite<DBTypes.HalfMatrix4x3>($"{schemaLc}.halfmatrix4x3");
+            builder.MapComposite<DBTypes.Box3>($"{schemaLc}.box3");
+
+            return builder.Build();
         }
 
         public void ImportData()
         {
             LogMsg("==== Importing data ====");
-            Parallel.ForEach(DB.Tables, table =>
+            using var dataSource = BuildDataSource();
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            Parallel.ForEach(DB.Tables, parallelOptions, table =>
             {
                 var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
-                var conn      = OpenDbConnection();
-                BindTypes(conn);
+                using var conn = dataSource.OpenConnection();
 
                 var tableCopySql = CreateCopySql(table);
                 using (var writer = conn.BeginBinaryImport(tableCopySql)) {
@@ -383,7 +382,6 @@ namespace SDBrowser
                 }
                 
                 LogMsg($"Imported data for {tableName}, ({table.Rows.Count} rows)");
-                conn.Close();
             });
             LogMsg("==== Imported data ====");
         }
