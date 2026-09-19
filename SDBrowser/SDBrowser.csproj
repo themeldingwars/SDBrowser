@@ -39,9 +39,10 @@
 
   <ItemGroup>
     <None Remove="Lib\**" />
-    <None Update="fields.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SDBrowser.PgImport\SDBrowser.PgImport.csproj" />
   </ItemGroup>
 
 </Project>

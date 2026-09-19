@@ -32,7 +32,7 @@ namespace FauFau.SDBrowser
                 LogMsg(" ======================= Importing ====================== ");
 
                 var connStr          = $"{tbDbConnStr.Text}; Search Path={tbSchemaName.Text};";
-                var importerExporter = new PgImportExport(connStr, tbSchemaName.Text, Db, LogMsg);
+                var importerExporter = new PgImportExport(connStr, tbSchemaName.Text, Db, SDBrowser.GetTableOrFieldName, LogMsg);
 
                 if (importerExporter.HasConnection)
                 {

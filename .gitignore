@@ -1,5 +1,5 @@
-SDBrowser/[Bb]in/
-SDBrowser/[Oo]bj/
+[Bb]in/
+[Oo]bj/
 packages/
 .vs/
 *.suo

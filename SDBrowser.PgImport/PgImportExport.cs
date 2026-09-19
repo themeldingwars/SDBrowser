@@ -19,16 +19,20 @@ namespace SDBrowser
         public string               Schema;
         public StaticDB             DB;
         public Action<string, bool> LogMessage;
+        public Func<uint, string>   GetName;
 
         private NpgsqlConnection DbConn;
 
         public bool HasConnection => DbConn != null;
 
-        public PgImportExport(string connStr, string schema, StaticDB db, Action<string, bool> logMessage)
+        public bool HadErrors { get; private set; }
+
+        public PgImportExport(string connStr, string schema, StaticDB db, Func<uint, string> getName, Action<string, bool> logMessage)
         {
             ConnStr    = new NpgsqlConnectionStringBuilder(connStr) { GssEncryptionMode = GssEncryptionMode.Disable }.ConnectionString;
             Schema     = schema;
             DB         = db;
+            GetName    = getName;
             LogMessage = logMessage;
 
             DbConn = OpenDbConnection();
@@ -36,16 +40,19 @@ namespace SDBrowser
 
         private NpgsqlConnection OpenDbConnection()
         {
+            var csb    = new NpgsqlConnectionStringBuilder(ConnStr);
+            var target = $"{csb.Host}:{csb.Port}/{csb.Database}";
+
             try {
                 var conn = new NpgsqlConnection(ConnStr);
                 conn.Open();
 
-                LogMsg($"Connected to DB at: {ConnStr}");
+                LogMsg($"Connected to DB at: {target}");
 
                 return conn;
             }
             catch (Exception e) {
-                LogError($"Error Connecting to DB at: {ConnStr}");
+                LogError($"Error Connecting to DB at: {target}");
                 LogError($"Error: {e}");
             }
 
@@ -58,7 +65,7 @@ namespace SDBrowser
             var sqls = new List<string>();
 
             // Tables
-            sqls.AddRange(DB.Tables.Select(x => $"DROP TABLE IF EXISTS {Schema}.\"{FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(x.Id)}\"; "));
+            sqls.AddRange(DB.Tables.Select(x => $"DROP TABLE IF EXISTS {Schema}.\"{GetName(x.Id)}\"; "));
             sqls.Add($"DROP TABLE IF EXISTS {Schema}.\"Meta\";");
 
             // Types
@@ -86,7 +93,7 @@ namespace SDBrowser
             var tableMetas = new List<TableMeta>();
             for (var tblIdx = 0; tblIdx < DB.Tables.Count; tblIdx++) {
                 var table     = DB.Tables[tblIdx];
-                var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
+                var tableName = GetName(table.Id);
                 var tableMeta = new TableMeta
                 {
                     Idx  = tblIdx,
@@ -100,7 +107,7 @@ namespace SDBrowser
                 for (var i = 0; i < table.Columns.Count; i++) {
                     var col  = table.Columns[i];
                     var typ  = GetSqlTypeForColum(col.Type);
-                    var name = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(col.Id);
+                    var name = GetName(col.Id);
                     sb.Append($@"""{name}"" {typ}");
 
                     //if (false) sb.Append(" PRIMARY KEY");
@@ -253,7 +260,7 @@ namespace SDBrowser
                     ImportTable(dataSource, table);
                 }
                 catch (Exception e) {
-                    LogError($"Error importing {FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id)}: {e}");
+                    LogError($"Error importing {GetName(table.Id)}: {e}");
                 }
             });
             LogMsg("==== Imported data ====");
@@ -261,7 +268,7 @@ namespace SDBrowser
 
         private void ImportTable(NpgsqlDataSource dataSource, StaticDB.Table table)
         {
-            var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
+            var tableName = GetName(table.Id);
             using var conn = dataSource.OpenConnection();
 
             var tableCopySql = CreateCopySql(table);
@@ -272,7 +279,7 @@ namespace SDBrowser
                     for (var index = 0; index < row.Fields.Count; index++) {
                         var field      = row.Fields[index];
                         var fieldType  = table.Columns[index].Type;
-                        var columnName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Columns[index].Id);
+                        var columnName = GetName(table.Columns[index].Id);
 
                         if (field == null) {
                             if (!table.IsColumnNullable(table.Columns[index]))
@@ -400,12 +407,12 @@ namespace SDBrowser
         private string CreateCopySql(StaticDB.Table table)
         {
             var sb        = new StringBuilder();
-            var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
+            var tableName = GetName(table.Id);
             sb.Append($"COPY {Schema}.\"{tableName}\" (");
 
             for (var i = 0; i < table.Columns.Count; i++) {
                 var col  = table.Columns[i];
-                var name = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(col.Id);
+                var name = GetName(col.Id);
                 sb.Append($"\"{name}\"");
 
                 if (table.Columns.Count - 1 != i) sb.Append(", ");
@@ -521,6 +528,8 @@ namespace SDBrowser
 
         private void LogError(string msg)
         {
+            HadErrors = true;
+
             if (LogMessage != null) {
                 LogMessage(msg, true);
             }
