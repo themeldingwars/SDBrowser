@@ -251,139 +251,149 @@ namespace SDBrowser
             var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             Parallel.ForEach(DB.Tables, parallelOptions, table =>
             {
-                var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
-                using var conn = dataSource.OpenConnection();
+                try {
+                    ImportTable(dataSource, table);
+                }
+                catch (Exception e) {
+                    LogError($"Error importing {FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id)}: {e}");
+                }
+            });
+            LogMsg("==== Imported data ====");
+        }
 
-                var tableCopySql = CreateCopySql(table);
-                using (var writer = conn.BeginBinaryImport(tableCopySql)) {
-                    for (var i = 0; i < table.Rows.Count; i++) {
-                        var row = table.Rows[i];
-                        writer.StartRow();
-                        for (var index = 0; index < row.Fields.Count; index++) {
-                            var field      = row.Fields[index];
-                            var fieldType  = table.Columns[index].Type;
-                            var columnName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Columns[index].Id);
+        private void ImportTable(NpgsqlDataSource dataSource, StaticDB.Table table)
+        {
+            var tableName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Id);
+            using var conn = dataSource.OpenConnection();
 
-                            if (field == null) {
-                                if (!table.IsColumnNullable(table.Columns[index]))
+            var tableCopySql = CreateCopySql(table);
+            using (var writer = conn.BeginBinaryImport(tableCopySql)) {
+                for (var i = 0; i < table.Rows.Count; i++) {
+                    var row = table.Rows[i];
+                    writer.StartRow();
+                    for (var index = 0; index < row.Fields.Count; index++) {
+                        var field      = row.Fields[index];
+                        var fieldType  = table.Columns[index].Type;
+                        var columnName = FauFau.SDBrowser.SDBrowser.GetTableOrFieldName(table.Columns[index].Id);
+
+                        if (field == null) {
+                            if (!table.IsColumnNullable(table.Columns[index]))
+                            {
+                                if (fieldType == StaticDB.DBType.Vector2Array)
                                 {
-                                    if (fieldType == StaticDB.DBType.Vector2Array)
-                                    {
-                                        writer.Write(new List<Vector2>());
-                                    } else if (fieldType == StaticDB.DBType.Blob)
-                                    {
-                                        writer.Write(new List<byte>());
-                                    }
-                                }
-                                else
+                                    writer.Write(new List<Vector2>());
+                                } else if (fieldType == StaticDB.DBType.Blob)
                                 {
-                                    writer.WriteNull();
+                                    writer.Write(new List<byte>());
                                 }
                             }
-                            else if (IsBasicType(fieldType)) {
-                                if (fieldType == StaticDB.DBType.UShort) {
-                                    writer.Write(Convert.ToInt32(field));
-                                }
-                                else if (fieldType == StaticDB.DBType.UInt) {
-                                    writer.Write(Convert.ToInt64(field));
-                                }
-                                else if (fieldType == StaticDB.DBType.ULong) {
-                                    var val = (long) (ulong) field;
-                                    writer.Write(val);
-                                }
-                                else if (fieldType == StaticDB.DBType.Half) {
-                                    writer.Write(Convert.ToSingle(field));
-                                }
-                                else if (field is string fieldStr) { // clean nulls from the end of strings
-                                    var val = fieldStr.Replace("\0", "");
-                                    writer.Write(val);
-                                }
-                                else if (field is char fieldChar) {
-                                    if (fieldChar == '\0') { // feels abit eh, TODO: check in case of char trouble
-                                        Console.WriteLine($"Got an invalid char {fieldChar} in table {tableName} on column {columnName} row {i}");
-                                        writer.Write(' ');
-                                    }
-                                    else {
-                                        writer.Write(fieldChar);
-                                    }
-                                }
-                                else {
-                                    writer.Write(field);
-                                }
-                            }
-                            else if (IsCustomType(fieldType)) {
-                                if (field is FauFau.Util.CommmonDataTypes.Vector2 v2) {
-                                    writer.Write(new Vector2(v2.x, v2.y));
-                                }
-                                else if (field is FauFau.Util.CommmonDataTypes.Vector3 v3) {
-                                    writer.Write(new Vector3(v3.x, v3.y, v3.z));
-                                }
-                                else if (field is FauFau.Util.CommmonDataTypes.Vector4 v4) {
-                                    writer.Write(new Vector4(v4.x, v4.y, v4.z, v4.w));
-                                }
-                                else if (field is FauFau.Util.CommmonDataTypes.Matrix4x4 m4) {
-                                    writer.Write(new Matrix4x4(m4.x.x, m4.x.y, m4.x.z, m4.x.w,
-                                        m4.y.x, m4.y.y, m4.y.z, m4.y.w,
-                                        m4.z.x, m4.z.y, m4.z.z, m4.z.w,
-                                        m4.w.x, m4.w.y, m4.w.z, m4.w.w));
-                                }
-                                else if (field is FauFau.Util.CommmonDataTypes.Half3 h3) {
-                                    writer.Write(new DBTypes.Half3 {x = h3.x, y = h3.y, z = h3.z});
-                                }
-                                else if (field is FauFau.Util.CommmonDataTypes.Box3 b3) {
-                                    writer.Write(new DBTypes.Box3 {min = new Vector3(b3.min.x, b3.min.y, b3.min.z), max = new Vector3(b3.max.x, b3.max.y, b3.max.z)});
-                                }
-                                else if (field is FauFau.Util.CommmonDataTypes.HalfMatrix4x3 hm4x3) {
-                                    writer.Write(new DBTypes.HalfMatrix4x3
-                                    {
-                                        x = new DBTypes.Half3 {x = hm4x3.x.x, y = hm4x3.x.y, z = hm4x3.x.z},
-                                        y = new DBTypes.Half3 {x = hm4x3.y.x, y = hm4x3.y.y, z = hm4x3.y.z},
-                                        z = new DBTypes.Half3 {x = hm4x3.z.x, y = hm4x3.z.y, z = hm4x3.z.z},
-                                        w = new DBTypes.Half3 {x = hm4x3.w.x, y = hm4x3.w.y, z = hm4x3.w.z}
-                                    });
-                                }
-                                else {
-                                    writer.Write(field);
-                                }
-                            }
-                            else if (IsArrayType(fieldType)) {
-                                if (field is List<ushort> shortsList) {
-                                    var val = shortsList.Select(x => Convert.ToInt32(x)).ToList();
-                                    writer.Write(val);
-                                }
-                                else if (field is List<uint> intsList) {
-                                    var val = intsList.Select(x => Convert.ToInt64(x)).ToList();
-                                    writer.Write(val);
-                                }
-                                else if (field is List<FauFau.Util.CommmonDataTypes.Vector2> v2List) {
-                                    var val = v2List.Select(x => new Vector2(x.x, x.y)).ToList();
-                                    writer.Write(val);
-                                }
-                                else if (field is List<FauFau.Util.CommmonDataTypes.Vector3> v3List) {
-                                    var val = v3List.Select(x => new Vector3(x.x, x.y, x.z)).ToList();
-                                    writer.Write(val);
-                                }
-                                else if (field is List<FauFau.Util.CommmonDataTypes.Vector4> v4List) {
-                                    var val = v4List.Select(x => new Vector4(x.x, x.y, x.z, x.w)).ToList();
-                                    writer.Write(val);
-                                }
-                                else {
-                                    writer.Write(field);
-                                }
-                            }
-                            else {
-                                Console.WriteLine("Unhandled type");
+                            else
+                            {
                                 writer.WriteNull();
                             }
                         }
+                        else if (IsBasicType(fieldType)) {
+                            if (fieldType == StaticDB.DBType.UShort) {
+                                writer.Write(Convert.ToInt32(field));
+                            }
+                            else if (fieldType == StaticDB.DBType.UInt) {
+                                writer.Write(Convert.ToInt64(field));
+                            }
+                            else if (fieldType == StaticDB.DBType.ULong) {
+                                var val = (long) (ulong) field;
+                                writer.Write(val);
+                            }
+                            else if (fieldType == StaticDB.DBType.Half) {
+                                writer.Write(Convert.ToSingle(field));
+                            }
+                            else if (field is string fieldStr) { // clean nulls from the end of strings
+                                var val = fieldStr.Replace("\0", "");
+                                writer.Write(val);
+                            }
+                            else if (field is char fieldChar) {
+                                if (fieldChar == '\0') { // feels abit eh, TODO: check in case of char trouble
+                                    Console.WriteLine($"Got an invalid char {fieldChar} in table {tableName} on column {columnName} row {i}");
+                                    writer.Write(' ');
+                                }
+                                else {
+                                    writer.Write(fieldChar);
+                                }
+                            }
+                            else {
+                                writer.Write(field);
+                            }
+                        }
+                        else if (IsCustomType(fieldType)) {
+                            if (field is FauFau.Util.CommmonDataTypes.Vector2 v2) {
+                                writer.Write(new Vector2(v2.x, v2.y));
+                            }
+                            else if (field is FauFau.Util.CommmonDataTypes.Vector3 v3) {
+                                writer.Write(new Vector3(v3.x, v3.y, v3.z));
+                            }
+                            else if (field is FauFau.Util.CommmonDataTypes.Vector4 v4) {
+                                writer.Write(new Vector4(v4.x, v4.y, v4.z, v4.w));
+                            }
+                            else if (field is FauFau.Util.CommmonDataTypes.Matrix4x4 m4) {
+                                writer.Write(new Matrix4x4(m4.x.x, m4.x.y, m4.x.z, m4.x.w,
+                                    m4.y.x, m4.y.y, m4.y.z, m4.y.w,
+                                    m4.z.x, m4.z.y, m4.z.z, m4.z.w,
+                                    m4.w.x, m4.w.y, m4.w.z, m4.w.w));
+                            }
+                            else if (field is FauFau.Util.CommmonDataTypes.Half3 h3) {
+                                writer.Write(new DBTypes.Half3 {x = h3.x, y = h3.y, z = h3.z});
+                            }
+                            else if (field is FauFau.Util.CommmonDataTypes.Box3 b3) {
+                                writer.Write(new DBTypes.Box3 {min = new Vector3(b3.min.x, b3.min.y, b3.min.z), max = new Vector3(b3.max.x, b3.max.y, b3.max.z)});
+                            }
+                            else if (field is FauFau.Util.CommmonDataTypes.HalfMatrix4x3 hm4x3) {
+                                writer.Write(new DBTypes.HalfMatrix4x3
+                                {
+                                    x = new DBTypes.Half3 {x = hm4x3.x.x, y = hm4x3.x.y, z = hm4x3.x.z},
+                                    y = new DBTypes.Half3 {x = hm4x3.y.x, y = hm4x3.y.y, z = hm4x3.y.z},
+                                    z = new DBTypes.Half3 {x = hm4x3.z.x, y = hm4x3.z.y, z = hm4x3.z.z},
+                                    w = new DBTypes.Half3 {x = hm4x3.w.x, y = hm4x3.w.y, z = hm4x3.w.z}
+                                });
+                            }
+                            else {
+                                writer.Write(field);
+                            }
+                        }
+                        else if (IsArrayType(fieldType)) {
+                            if (field is List<ushort> shortsList) {
+                                var val = shortsList.Select(x => Convert.ToInt32(x)).ToList();
+                                writer.Write(val);
+                            }
+                            else if (field is List<uint> intsList) {
+                                var val = intsList.Select(x => Convert.ToInt64(x)).ToList();
+                                writer.Write(val);
+                            }
+                            else if (field is List<FauFau.Util.CommmonDataTypes.Vector2> v2List) {
+                                var val = v2List.Select(x => new Vector2(x.x, x.y)).ToList();
+                                writer.Write(val);
+                            }
+                            else if (field is List<FauFau.Util.CommmonDataTypes.Vector3> v3List) {
+                                var val = v3List.Select(x => new Vector3(x.x, x.y, x.z)).ToList();
+                                writer.Write(val);
+                            }
+                            else if (field is List<FauFau.Util.CommmonDataTypes.Vector4> v4List) {
+                                var val = v4List.Select(x => new Vector4(x.x, x.y, x.z, x.w)).ToList();
+                                writer.Write(val);
+                            }
+                            else {
+                                writer.Write(field);
+                            }
+                        }
+                        else {
+                            Console.WriteLine("Unhandled type");
+                            writer.WriteNull();
+                        }
                     }
-
-                    writer.Complete();
                 }
-                
-                LogMsg($"Imported data for {tableName}, ({table.Rows.Count} rows)");
-            });
-            LogMsg("==== Imported data ====");
+
+                writer.Complete();
+            }
+            
+            LogMsg($"Imported data for {tableName}, ({table.Rows.Count} rows)");
         }
 
         private string CreateCopySql(StaticDB.Table table)

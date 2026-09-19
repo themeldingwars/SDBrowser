@@ -57,6 +57,12 @@ namespace FauFau.SDBrowser
                 
                 Invoke(new MethodInvoker(() => { btnImport.Enabled = true; }));
             });
+
+            importTask.ContinueWith(t =>
+            {
+                LogMsg($"Error: {t.Exception}", true);
+                Invoke(new MethodInvoker(() => { btnImport.Enabled = true; }));
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private void LogMsg(string msg, bool error = false)
