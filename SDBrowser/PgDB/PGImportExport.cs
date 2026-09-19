@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using FauFau.Formats;
 using FauFau.SDBrowser;
 using Npgsql;
-using Matrix4x4 = System.Numerics.Matrix4x4;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
@@ -236,7 +235,7 @@ namespace SDBrowser
             builder.MapComposite<Vector2>($"{schemaLc}.vector2");
             builder.MapComposite<Vector3>($"{schemaLc}.vector3");
             builder.MapComposite<Vector4>($"{schemaLc}.vector4");
-            builder.MapComposite<Matrix4x4>($"{schemaLc}.matrix4x4");
+            builder.MapComposite<DBTypes.Matrix4x4>($"{schemaLc}.matrix4x4");
             builder.MapComposite<DBTypes.Half3>($"{schemaLc}.half3");
             builder.MapComposite<DBTypes.HalfMatrix4x3>($"{schemaLc}.halfmatrix4x3");
             builder.MapComposite<DBTypes.Box3>($"{schemaLc}.box3");
@@ -334,10 +333,13 @@ namespace SDBrowser
                                 writer.Write(new Vector4(v4.x, v4.y, v4.z, v4.w));
                             }
                             else if (field is FauFau.Util.CommmonDataTypes.Matrix4x4 m4) {
-                                writer.Write(new Matrix4x4(m4.x.x, m4.x.y, m4.x.z, m4.x.w,
-                                    m4.y.x, m4.y.y, m4.y.z, m4.y.w,
-                                    m4.z.x, m4.z.y, m4.z.z, m4.z.w,
-                                    m4.w.x, m4.w.y, m4.w.z, m4.w.w));
+                                writer.Write(new DBTypes.Matrix4x4
+                                {
+                                    m11 = m4.x.x, m12 = m4.x.y, m13 = m4.x.z, m14 = m4.x.w,
+                                    m21 = m4.y.x, m22 = m4.y.y, m23 = m4.y.z, m24 = m4.y.w,
+                                    m31 = m4.z.x, m32 = m4.z.y, m33 = m4.z.z, m34 = m4.z.w,
+                                    m41 = m4.w.x, m42 = m4.w.y, m43 = m4.w.z, m44 = m4.w.w
+                                });
                             }
                             else if (field is FauFau.Util.CommmonDataTypes.Half3 h3) {
                                 writer.Write(new DBTypes.Half3 {x = h3.x, y = h3.y, z = h3.z});
