@@ -127,7 +127,7 @@ namespace FauFau.SDBrowser
             }
 
 
-            if(sb.Length > 0)
+            if (sb.Length > 0)
             {
                 sb.Remove(sb.Length - 2, 2);
                 sb.Append("...");

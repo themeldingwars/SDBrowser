@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Text;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
 using System.Diagnostics;
@@ -53,9 +50,9 @@ namespace FauFau.SDBrowser {
             get { return isVertical; }
             set
             {
-                if(isVertical != value)
+                if (isVertical != value)
                 {
-                    if(value)
+                    if (value)
                     {
                         moUpArrowImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
                         moDownArrowImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
@@ -462,11 +459,11 @@ namespace FauFau.SDBrowser {
                 if (nPixelRange > 0) {
                     int nNewThumbTop = y - (UpArrowImage.Height+nSpot);
                     
-                    if(nNewThumbTop<0)
+                    if (nNewThumbTop<0)
                     {
                         moThumbTop = nNewThumbTop = 0;
                     }
-                    else if(nNewThumbTop > nPixelRange)
+                    else if (nNewThumbTop > nPixelRange)
                     {
                         moThumbTop = nNewThumbTop = nPixelRange;
                     }
@@ -488,7 +485,7 @@ namespace FauFau.SDBrowser {
         }
 
         private void CustomScrollbar_MouseMove(object sender, MouseEventArgs e) {
-            if(moThumbDown == true)
+            if (moThumbDown == true)
             {
                 this.moThumbDragging = true;
             }
@@ -498,10 +495,10 @@ namespace FauFau.SDBrowser {
                 MoveThumb(e.Y);
             }
 
-            if(ValueChanged != null)
+            if (ValueChanged != null)
                 ValueChanged(this, new EventArgs());
 
-            if(Scroll != null)
+            if (Scroll != null)
                 Scroll(this, new EventArgs());
         }
 

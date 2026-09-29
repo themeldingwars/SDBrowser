@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FauFau.Formats;
-using FauFau.SDBrowser;
 using Npgsql;
 using Vector2 = System.Numerics.Vector2;
 using Vector3 = System.Numerics.Vector3;

@@ -205,7 +205,7 @@ namespace FauFau.SDBrowser {
                 } else {
                     saveableStrings.Add(GetTableOrFieldName(table.Id));
                 }
-                foreach(var column in table.Columns)
+                foreach (var column in table.Columns)
                 {
                     totalFields++;
                     if (!stringDb.ContainsKey(column.Id))
@@ -1609,7 +1609,7 @@ namespace FauFau.SDBrowser {
             rtbOutput.Clear();
 
             uint key;
-            if(uint.TryParse(tbxDecrypt.Text, out key))
+            if (uint.TryParse(tbxDecrypt.Text, out key))
             {
                 uint key2 = BitConverter.ToUInt32(Enumerable.Reverse(BitConverter.GetBytes(key)).ToArray(), 0);
                 bool match = false;
@@ -1636,7 +1636,7 @@ namespace FauFau.SDBrowser {
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception)
                 {
 
                 }
@@ -1661,7 +1661,7 @@ namespace FauFau.SDBrowser {
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                 }
