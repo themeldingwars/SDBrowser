@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="Be.Windows.Forms.HexBox.Net5" Version="1.8.0" />
-    <PackageReference Include="FauFau" Version="1.5.4" />
+    <PackageReference Include="FauFau" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.12" />
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="SharpCompress" Version="0.50.4" />

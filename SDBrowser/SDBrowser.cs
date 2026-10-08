@@ -13,7 +13,6 @@ using static FauFau.Formats.StaticDB;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using FauFau.Util;
-using Color = System.Drawing.Color;
 
 namespace FauFau.SDBrowser {
 	public partial class SDBrowser : Form
