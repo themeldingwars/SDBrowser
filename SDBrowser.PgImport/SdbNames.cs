@@ -1,38 +1,25 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using FauFau.Formats;
 
 namespace SDBrowser
 {
-    public class SdbNames
+    public static class SdbNames
     {
-        private readonly Dictionary<uint, string> names = new Dictionary<uint, string>();
-
-        public static SdbNames LoadDefault()
+        // The names from fields.txt and test-fields.txt next to the executable, the first name for a hash wins
+        public static StaticDBNames LoadDefault()
         {
-            var names = new SdbNames();
+            var names = new StaticDBNames();
             var baseDir = AppContext.BaseDirectory;
 
-            names.AddFromFile(Path.Combine(baseDir, "fields.txt"));
-            names.AddFromFile(Path.Combine(baseDir, "test-fields.txt"));
+            foreach (var file in new[] { "fields.txt", "test-fields.txt" }) {
+                var path = Path.Combine(baseDir, file);
+                if (File.Exists(path)) {
+                    names.AddFromFile(path);
+                }
+            }
 
             return names;
         }
-
-        public void AddFromFile(string path)
-        {
-            if (!File.Exists(path)) {
-                return;
-            }
-
-            foreach (var str in File.ReadAllLines(path)) {
-                // Same rule as the UI: the first string for a hash wins
-                names.TryAdd(FauFau.Util.Checksum.FFnv32(str), str);
-            }
-        }
-
-        public string GetTableOrFieldName(uint id) => names.TryGetValue(id, out var name) ? name : GetIdAsHex(id);
-
-        public static string GetIdAsHex(uint id) => "0x" + id.ToString("X4").PadLeft(8, '0');
     }
 }

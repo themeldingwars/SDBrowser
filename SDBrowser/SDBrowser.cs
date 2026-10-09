@@ -20,9 +20,8 @@ namespace FauFau.SDBrowser {
         private StaticDB sdb;
         private int openTable = -1;
 
-        public static Dictionary<uint, string> stringDb = new Dictionary<uint, string>();
+        public static StaticDBNames names = new StaticDBNames();
         public List<string> clearedStrings = new List<string>();
-        public Dictionary<uint, List<string>> dupes = new Dictionary<uint, List<string>>();
         private List<string> TableNames = new List<string>();
 
         private Tuple<string, StaticDB.DBType>[] fields;
@@ -198,7 +197,7 @@ namespace FauFau.SDBrowser {
             // Add any matching strings to saveable
             foreach (var table in sdb)
             {
-                if (!stringDb.ContainsKey(table.Id)) {
+                if (!names.TryGetName(table.Id, out _)) {
                     missingTables++;
                     sbTables.AppendLine($"{sdb.Tables.IndexOf(table)} - {GetIdAsHex(table.Id)}");
                 } else {
@@ -207,7 +206,7 @@ namespace FauFau.SDBrowser {
                 foreach (var column in table.Columns)
                 {
                     totalFields++;
-                    if (!stringDb.ContainsKey(column.Id))
+                    if (!names.TryGetName(column.Id, out _))
                     {
                         missingFields++;
                         sbFields.AppendLine($"{GetTableOrFieldName(table.Id)} - {GetIdAsHex(column.Id)} ({column.Type})");
@@ -289,19 +288,12 @@ namespace FauFau.SDBrowser {
 
         public static string GetIdAsHex(uint id)
         {
-            return "0x" + id.ToString("X4").PadLeft(8, '0');
+            return StaticDBNames.FormatHash(id);
         }
 
         public static string GetTableOrFieldName(uint id)
         {
-            if (stringDb.ContainsKey(id))
-            {
-                return stringDb[id];
-            }
-            else
-            {
-                return GetIdAsHex(id);
-            }
+            return names.GetName(id);
         }
 
         private void ClearInspector()
@@ -327,21 +319,10 @@ namespace FauFau.SDBrowser {
             {
                 uint key = FauFau.Util.Checksum.FFnv32(str);
 
-                if (!stringDb.ContainsKey(key))
+                if (!names.Add(str) && !str.Equals(names.GetName(key)))
                 {
-                    stringDb.Add(key, str);
-                    dupes.Add(key, new List<string>());
-                    dupes[key].Add(str);
+                    Console.WriteLine("Collision: " + key + " : " + names.GetName(key) + ", " + str);
                 }
-                else
-                {
-                    if (!str.Equals(stringDb[key]))
-                    {
-                        Console.WriteLine("Collision: " + key + " : " + stringDb[key] + ", " + str);
-                        dupes[key].Add(str);
-                    }
-                }
-
             }
         }
 
@@ -388,27 +369,17 @@ namespace FauFau.SDBrowser {
                 {
                     col.HeaderCell.Style.BackColor = Color.FromArgb(255, 65, 45, 45);
                 }
-                // color fields
-                bool b = false;
-                foreach (List<string> d in dupes.Values)
+                // Green for names only the test strings know, red for confirmed names whose hash has other candidates
+                IReadOnlyList<string> candidates = names.GetCandidates(c.Id);
+                if (candidates.Contains(fName))
                 {
-
-                    if (b) break;
-                    foreach (string dd in d)
+                    if (!clearedStrings.Contains(fName))
                     {
-                        if (dd.Equals(fName))
-                        {
-                            if (!clearedStrings.Contains(fName))
-                            {
-                                dgvRows.Columns[dgvRows.ColumnCount - 1].HeaderCell.Style.BackColor = Color.FromArgb(80, 150, 80);
-                            }
-                            else if (d.Count > 1)
-                            {
-                                dgvRows.Columns[dgvRows.ColumnCount - 1].HeaderCell.Style.BackColor = Color.FromArgb(150, 80, 80);
-                            }
-                            b = true;
-                            break;
-                        }
+                        dgvRows.Columns[dgvRows.ColumnCount - 1].HeaderCell.Style.BackColor = Color.FromArgb(80, 150, 80);
+                    }
+                    else if (candidates.Count > 1)
+                    {
+                        dgvRows.Columns[dgvRows.ColumnCount - 1].HeaderCell.Style.BackColor = Color.FromArgb(150, 80, 80);
                     }
                 }
             }

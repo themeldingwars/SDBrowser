@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -145,8 +144,8 @@ namespace SDBrowser
                 Patch        = DB.Patch,
                 Flags        = (uint)DB.Flags,
                 Timestamp    = DB.Timestamp,
-                FileVersion  = (uint)GetInstanceField(DB.GetType(), DB, "fileVersion"),
-                MemoryVersion = (uint)GetInstanceField(DB.GetType(), DB, "memoryVersion")
+                FileVersion  = DB.FileVersion,
+                MemoryVersion = DB.MemoryVersion
             };
 
             void AddToMetaTable(string name, MetaType type, string data) => sqls.Add($@"INSERT INTO {Schema}.""Meta"" (name, type, data) VALUES ('{name}', {(int) type}, CAST('{data}' as json));");
@@ -160,15 +159,6 @@ namespace SDBrowser
             }
 
             ExecuteSqls(sqls);
-        }
-        
-        // Remove when we have .net 5 and can update to the new faufau
-        internal static object GetInstanceField(Type type, object instance, string fieldName)
-        {
-            BindingFlags bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                                   | BindingFlags.Static;
-            FieldInfo field = type.GetField(fieldName, bindFlags);
-            return field.GetValue(instance);
         }
         
         // Creates custom types for the sdb, bind to native numeric types where we can
@@ -311,7 +301,7 @@ namespace SDBrowser
                             else if (fieldType == StaticDB.DBType.Half) {
                                 writer.Write(Convert.ToSingle(field));
                             }
-                            else if (field is string fieldStr) { // clean nulls from the end of strings
+                            else if (field is string fieldStr) { // Postgres text can't hold NUL, the parameter headers of localized text have some
                                 var val = fieldStr.Replace("\0", "");
                                 writer.Write(val);
                             }
