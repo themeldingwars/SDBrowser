@@ -18,6 +18,7 @@ namespace FauFau.SDBrowser {
 	public partial class SDBrowser : Form
     {
         private StaticDB sdb;
+        private string sdbPath;
         private int openTable = -1;
 
         public static StaticDBNames names = new StaticDBNames();
@@ -262,6 +263,7 @@ namespace FauFau.SDBrowser {
                 // Load the new db
                 sdb = new StaticDB();
                 sdb.Read(filePath);
+                sdbPath = filePath;
 
                 // Display basic info
                 lblPatch.Text = "Patch: " + sdb.Patch;
@@ -1908,7 +1910,7 @@ namespace FauFau.SDBrowser {
         private void DB_ImportExport_Click(object sender, EventArgs e)
         {
             var dbWindow = new DBImportExport();
-            dbWindow.Db = sdb;
+            dbWindow.DbPath = sdbPath;
             dbWindow.Show();
         }
 

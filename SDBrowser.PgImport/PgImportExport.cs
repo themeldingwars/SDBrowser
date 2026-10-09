@@ -16,7 +16,7 @@ namespace SDBrowser
     {
         public string               ConnStr;
         public string               Schema;
-        public StaticDB             DB;
+        public StaticDBView         DB;
         public Action<string, bool> LogMessage;
         public Func<uint, string>   GetName;
 
@@ -26,7 +26,7 @@ namespace SDBrowser
 
         public bool HadErrors { get; private set; }
 
-        public PgImportExport(string connStr, string schema, StaticDB db, Func<uint, string> getName, Action<string, bool> logMessage)
+        public PgImportExport(string connStr, string schema, StaticDBView db, Func<uint, string> getName, Action<string, bool> logMessage)
         {
             ConnStr    = new NpgsqlConnectionStringBuilder(connStr) { GssEncryptionMode = GssEncryptionMode.Disable }.ConnectionString;
             Schema     = schema;
@@ -64,7 +64,7 @@ namespace SDBrowser
             var sqls = new List<string>();
 
             // Tables
-            sqls.AddRange(DB.Tables.Select(x => $"DROP TABLE IF EXISTS {Schema}.\"{GetName(x.Id)}\"; "));
+            sqls.AddRange(DB.Select(x => $"DROP TABLE IF EXISTS {Schema}.\"{GetName(x.Id)}\"; "));
             sqls.Add($"DROP TABLE IF EXISTS {Schema}.\"Meta\";");
 
             // Types
@@ -90,8 +90,8 @@ namespace SDBrowser
             // Tables
             LogMsg("==== Creating tables ====");
             var tableMetas = new List<TableMeta>();
-            for (var tblIdx = 0; tblIdx < DB.Tables.Count; tblIdx++) {
-                var table     = DB.Tables[tblIdx];
+            for (var tblIdx = 0; tblIdx < DB.Count; tblIdx++) {
+                var table     = DB[tblIdx];
                 var tableName = GetName(table.Id);
                 var tableMeta = new TableMeta
                 {
@@ -103,23 +103,28 @@ namespace SDBrowser
                 var sb = new StringBuilder();
                 sb.Append($@"CREATE TABLE IF NOT EXISTS {Schema}.""{tableName}"" ");
                 sb.Append("(");
-                for (var i = 0; i < table.Columns.Count; i++) {
+                var width = 0;
+                for (var i = 0; i < table.ColumnCount; i++) {
                     var col  = table.Columns[i];
                     var typ  = GetSqlTypeForColum(col.Type);
                     var name = GetName(col.Id);
                     sb.Append($@"""{name}"" {typ}");
 
                     //if (false) sb.Append(" PRIMARY KEY");
-                    if (table.NullableColumn.All(x => x.Id != col.Id)) sb.Append(" NOT NULL");
+                    if (!col.IsNullable) sb.Append(" NOT NULL");
 
-                    if (i != table.Columns.Count - 1) sb.Append(", ");
+                    if (i != table.ColumnCount - 1) sb.Append(", ");
+
+                    // Bytes the row skips before the column
+                    var padding = col.Offset - width;
+                    width       = col.Offset + StaticDB.DBTypeLength(col.Type, DB.MemoryVersion);
 
                     tableMeta.Cols.Add(new ColMeta
                     {
                         Idx     = i,
                         Name    = name,
                         SdbType = col.Type,
-                        Padding = col.Padding
+                        Padding = padding
                     });
                 }
 
@@ -244,7 +249,7 @@ namespace SDBrowser
             LogMsg("==== Importing data ====");
             using var dataSource = BuildDataSource();
             var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-            Parallel.ForEach(DB.Tables, parallelOptions, table =>
+            Parallel.ForEach(DB, parallelOptions, table =>
             {
                 try {
                     ImportTable(dataSource, table);
@@ -256,23 +261,23 @@ namespace SDBrowser
             LogMsg("==== Imported data ====");
         }
 
-        private void ImportTable(NpgsqlDataSource dataSource, StaticDB.Table table)
+        private void ImportTable(NpgsqlDataSource dataSource, StaticDBView.Table table)
         {
             var tableName = GetName(table.Id);
             using var conn = dataSource.OpenConnection();
 
             var tableCopySql = CreateCopySql(table);
             using (var writer = conn.BeginBinaryImport(tableCopySql)) {
-                for (var i = 0; i < table.Rows.Count; i++) {
-                    var row = table.Rows[i];
+                for (var i = 0; i < table.Count; i++) {
+                    var row = table[i];
                     writer.StartRow();
-                    for (var index = 0; index < row.Fields.Count; index++) {
-                        var field      = row.Fields[index];
+                    for (var index = 0; index < table.ColumnCount; index++) {
+                        var field      = row.GetValue(index);
                         var fieldType  = table.Columns[index].Type;
                         var columnName = GetName(table.Columns[index].Id);
 
                         if (field == null) {
-                            if (!table.IsColumnNullable(table.Columns[index]))
+                            if (!table.Columns[index].IsNullable)
                             {
                                 if (fieldType == StaticDB.DBType.Vector2Array)
                                 {
@@ -391,21 +396,21 @@ namespace SDBrowser
                 writer.Complete();
             }
             
-            LogMsg($"Imported data for {tableName}, ({table.Rows.Count} rows)");
+            LogMsg($"Imported data for {tableName}, ({table.Count} rows)");
         }
 
-        private string CreateCopySql(StaticDB.Table table)
+        private string CreateCopySql(StaticDBView.Table table)
         {
             var sb        = new StringBuilder();
             var tableName = GetName(table.Id);
             sb.Append($"COPY {Schema}.\"{tableName}\" (");
 
-            for (var i = 0; i < table.Columns.Count; i++) {
+            for (var i = 0; i < table.ColumnCount; i++) {
                 var col  = table.Columns[i];
                 var name = GetName(col.Id);
                 sb.Append($"\"{name}\"");
 
-                if (table.Columns.Count - 1 != i) sb.Append(", ");
+                if (table.ColumnCount - 1 != i) sb.Append(", ");
             }
 
             sb.Append(") FROM STDIN (FORMAT BINARY)");

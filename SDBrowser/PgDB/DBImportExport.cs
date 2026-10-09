@@ -10,7 +10,7 @@ namespace FauFau.SDBrowser
 {
     public partial class DBImportExport : Form
     {
-        public StaticDB Db;
+        public string DbPath;
         
         public DBImportExport()
         {
@@ -32,7 +32,8 @@ namespace FauFau.SDBrowser
                 LogMsg(" ======================= Importing ====================== ");
 
                 var connStr          = $"{tbDbConnStr.Text}; Search Path={tbSchemaName.Text};";
-                var importerExporter = new PgImportExport(connStr, tbSchemaName.Text, Db, SDBrowser.GetTableOrFieldName, LogMsg);
+                using var db         = StaticDBView.Open(DbPath);
+                var importerExporter = new PgImportExport(connStr, tbSchemaName.Text, db, SDBrowser.GetTableOrFieldName, LogMsg);
 
                 if (importerExporter.HasConnection)
                 {
